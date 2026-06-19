@@ -1,0 +1,7 @@
+{
+    "CHANNEL_ID" : "1234567890",
+    "TOKEN" : "YOUR_BOT_TOKEN",
+    "ALLOW_MENTION_EVERYONE" : false,
+    "VERSION" : "v1.0",
+    "USERNAME" : "Sparky"
+}
