@@ -22,6 +22,7 @@ with open("settings.json", "r") as f:
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 
 bot = discord.Bot(intents=intents)
 
@@ -40,8 +41,6 @@ async def watch_console():
         print(f"[오류] ID가 {MONITOR_CHANNEL_ID}인 채널을 찾을 수 없습니다. ID를 확인해주세요.")
         return
 
-    # print(f"[시스템] {channel.name}에서 ")
-
     while True:
         line = await loop.run_in_executor(None, sys.stdin.readline)
         line = line.strip()
@@ -59,7 +58,9 @@ async def watch_console():
             print("[오류] @everyone 언급은 허용되지 않습니다.")
         else:
             try:
-                await channel.send(f"{USERNAME}: {line}")
+                processed_line = convert_names_to_mentions(line, channel)
+
+                await channel.send(f"{USERNAME}: {processed_line}")
                 print(f"[전송 완료] {USERNAME}: {line}")
             except Exception as e:
                 print(f"[전송 실패] 메시지를 보내지 못했습니다: {e}")
@@ -78,6 +79,32 @@ def resolve_markup(message):
     # clean_content leaves custom emoji as-is; render them as :name:.
     return CUSTOM_EMOJI_RE.sub(r":\1:", content)
 
+def convert_names_to_mentions(text, channel):
+    mention_pattern = re.compile(r"@([^\s]+)")
+    matches = mention_pattern.findall(text)
+    
+    if isinstance(channel, discord.TextChannel):
+        guild = channel.guild
+        
+        for name in matches:
+            name_lower = name.lower()
+            target_member = None
+            
+            for member in guild.members:
+                if member.display_name.lower() == name_lower:
+                    target_member = member
+                    break
+                elif member.name.lower() == name_lower:
+                    target_member = member
+                    break
+                elif getattr(member, 'global_name', None) and member.global_name.lower() == name_lower:
+                    target_member = member
+                    break
+            
+            if target_member:
+                text = text.replace(f"@{name}", f"<@{target_member.id}>")
+                
+    return text
 
 @bot.event
 async def on_message(message):
