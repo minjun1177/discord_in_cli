@@ -1,7 +1,7 @@
 # Discord in CLI
 
 ## TODO
-* [V] ~~Improve user mentions~~
+* [*] ~~Improve user mentions~~
 * [ ] Implement multi-channel support
 * [ ] Add message saving
 * [ ] Show 'Edited' tag when a user edits a message
