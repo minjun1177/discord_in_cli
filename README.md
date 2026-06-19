@@ -1,4 +1,4 @@
 # Discord in CLI
 
 ## License
-GPL
+[nihagosepeungeodachuehasem-license](https://github.com/200mill/nihagosepeungeodachuehasem-license)
