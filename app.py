@@ -4,6 +4,7 @@ import os
 import json
 import asyncio
 import sys
+import re
 
 """
 동작방식?
@@ -68,12 +69,22 @@ async def on_ready():
     print(f"봇 로그인 완료: {bot.user}")
     asyncio.create_task(watch_console())
 
+CUSTOM_EMOJI_RE = re.compile(r"<a?:([a-zA-Z0-9_]+):\d+>")
+
+
+def resolve_markup(message):
+    # clean_content handles user/channel/role mentions and @everyone/@here.
+    content = message.clean_content
+    # clean_content leaves custom emoji as-is; render them as :name:.
+    return CUSTOM_EMOJI_RE.sub(r":\1:", content)
+
+
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
         return
 
     if message.channel.id == MONITOR_CHANNEL_ID:
-        print(f"[{message.channel.name}] {message.author.name}: {message.content}")
+        print(f"[{message.channel.name}] {message.author.name}: {resolve_markup(message)}")
         
 bot.run(settings.get("TOKEN", "OMG_NO_TOKEN"))
