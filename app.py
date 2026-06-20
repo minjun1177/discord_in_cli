@@ -110,15 +110,55 @@ def convert_names_to_mentions(text, channel):
                 
     return text
 
-def log_message(message, is_json=False):
+def log_message(message, after=None, is_edit=False, is_json=False):
     if not SAVE_MESSAGES:
         return
         
     guild_name = message.guild.name if message.guild else "Direct Message"
     guild_id = message.guild.id if message.guild else None
 
+    if is_edit:
+        if is_json:
+            log_data = {
+                "type": "edit",
+                "message_id": message.id,
+                "timestamp": after.created_at.isoformat(),
+                "server": {
+                    "id": guild_id,
+                    "name": guild_name
+                },
+                "channel": {
+                    "id": message.channel.id,
+                    "name": message.channel.name if hasattr(message.channel, 'name') else "DM"
+                },
+                "author": {
+                    "id": message.author.id,
+                    "name": message.author.name,
+                    "is_bot": message.author.bot
+                },
+                "content_before": resolve_markup(message),
+                "content_after": resolve_markup(after),
+                "attachments_before": [attachment.url for attachment in message.attachments],
+                "attachments_after": [attachment.url for attachment in after.attachments]
+            }
+            
+            with open(SAVE_FILENAME, "a", encoding="utf-8") as f:
+                json.dump(log_data, f, ensure_ascii=False)
+                f.write("\n")
+        else:
+            time_str = after.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            
+            attachment_info_before = f" (첨부파일: {len(message.attachments)}개)" if message.attachments else ""
+            attachment_info_after = f" (첨부파일: {len(after.attachments)}개)" if after.attachments else ""
+            
+            log_line = f"[{time_str}] [{guild_name} / {message.channel.name}] {message.author.name}({message.author.id}) 수정됨: {resolve_markup(message)}{attachment_info_before} -> {resolve_markup(after)}{attachment_info_after}\n"
+            
+            with open(SAVE_FILENAME, "a", encoding="utf-8") as f:
+                f.write(log_line)
+
     if is_json:
         log_data = {
+            "type": "message",
             "message_id": message.id,
             "timestamp": message.created_at.isoformat(),
             "server": {
@@ -158,7 +198,15 @@ async def on_message(message):
         return
 
     if message.channel.id == MONITOR_CHANNEL_ID:
-        print(f"[{message.channel.name}] {message.author.name}: {resolve_markup(message)}")
+        print(f"[{message.channel.name}] {message.author.name} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}")
         log_message(message, is_json=SAVE_AS_JSON)
+
+@bot.event
+async def on_message_edit(before, after):
+    if after.author.bot or before.content == after.content:
+        return
+    if before.channel.id == MONITOR_CHANNEL_ID:
+        print(f"[{before.channel.name}] {after.author.name} 수정됨 ({after.created_at.strftime('%Y-%m-%d %H:%M:%S')}) {before.content} -> {after.content}")
+        log_message(before, after, is_edit=True, is_json=SAVE_AS_JSON)
 
 bot.run(settings.get("TOKEN", "OMG_NO_TOKEN"))
