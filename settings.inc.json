@@ -2,6 +2,9 @@
     "CHANNEL_ID" : "1234567890",
     "TOKEN" : "YOUR_BOT_TOKEN",
     "ALLOW_MENTION_EVERYONE" : false,
+    "SAVE_MESSAGES" : true,
+    "SAVE_AS_JSON" : false,
+    "SAVE_FILENAME" : "messages.log",
     "VERSION" : "v1.0",
     "USERNAME" : "Sparky"
 }

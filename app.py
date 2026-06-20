@@ -1,4 +1,5 @@
 from discord.ext import commands, tasks
+from datetime import timezone, datetime
 import discord
 import os
 import json
@@ -29,6 +30,9 @@ bot = discord.Bot(intents=intents)
 MONITOR_CHANNEL_ID = int(settings["CHANNEL_ID"])
 USERNAME = settings.get("USERNAME", "Sparky")
 ALLOW_MENTION_EVERYONE = settings.get("ALLOW_MENTION_EVERYONE", False)
+SAVE_MESSAGES = settings.get("SAVE_MESSAGES", True)
+SAVE_FILENAME = settings.get("SAVE_FILENAME", "messages.log")
+SAVE_AS_JSON = settings.get("SAVE_AS_JSON", False)
 
 
 async def watch_console():
@@ -106,6 +110,48 @@ def convert_names_to_mentions(text, channel):
                 
     return text
 
+def log_message(message, is_json=False):
+    if not SAVE_MESSAGES:
+        return
+        
+    guild_name = message.guild.name if message.guild else "Direct Message"
+    guild_id = message.guild.id if message.guild else None
+
+    if is_json:
+        log_data = {
+            "message_id": message.id,
+            "timestamp": message.created_at.isoformat(),
+            "server": {
+                "id": guild_id,
+                "name": guild_name
+            },
+            "channel": {
+                "id": message.channel.id,
+                "name": message.channel.name if hasattr(message.channel, 'name') else "DM"
+            },
+            "author": {
+                "id": message.author.id,
+                "name": message.author.name,
+                "is_bot": message.author.bot
+            },
+            "content": resolve_markup(message),
+            "attachments": [attachment.url for attachment in message.attachments]
+        }
+        
+        with open(SAVE_FILENAME, "a", encoding="utf-8") as f:
+            json.dump(log_data, f, ensure_ascii=False)
+            f.write("\n")
+            
+    else:
+        time_str = message.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        
+        attachment_info = f" (첨부파일: {len(message.attachments)}개)" if message.attachments else ""
+        
+        log_line = f"[{time_str}] [{guild_name} / {message.channel.name}] {message.author.name}({message.author.id}): {resolve_markup(message)}{attachment_info}\n"
+        
+        with open(SAVE_FILENAME, "a", encoding="utf-8") as f:
+            f.write(log_line)
+
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
@@ -113,5 +159,6 @@ async def on_message(message):
 
     if message.channel.id == MONITOR_CHANNEL_ID:
         print(f"[{message.channel.name}] {message.author.name}: {resolve_markup(message)}")
-        
+        log_message(message, is_json=SAVE_AS_JSON)
+
 bot.run(settings.get("TOKEN", "OMG_NO_TOKEN"))
