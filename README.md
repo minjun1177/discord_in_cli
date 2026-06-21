@@ -5,6 +5,8 @@
 * [ ] Implement multi-channel support
 * [x] ~~Add message saving~~
 * [x] ~~Show 'Edited' tag when a user edits a message~~
+* [ ] Show 'Deleted' tag when a user delete a message
+* [ ] Image rendering(ascii or terminal render)
 
 ## License
 [nihagosepeungeodachuehasem-license](https://github.com/200mill/nihagosepeungeodachuehasem-license)
