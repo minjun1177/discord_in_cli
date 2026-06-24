@@ -5,6 +5,8 @@
     "SAVE_MESSAGES" : true,
     "SAVE_AS_JSON" : false,
     "SAVE_FILENAME" : "messages.log",
+    "IMG_RENDER_BY" : "kkity",
+    "renderer_list" : ["kitty", "iterm2"], 
     "VERSION" : "v1.0",
     "USERNAME" : "Sparky"
 }
