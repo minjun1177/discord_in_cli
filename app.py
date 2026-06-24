@@ -215,5 +215,6 @@ async def on_message_delete(message: discord.Message):
         return
     if message.channel.id == MONITOR_CHANNEL_ID:
         print(f"[{message.channel.name}] {message.author.name} Deleted ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}")
+        log_message(message, is_json=SAVE_AS_JSON)
 
 bot.run(settings.get("TOKEN", "OMG_NO_TOKEN"))
