@@ -35,7 +35,7 @@ SAVE_FILENAME = settings.get("SAVE_FILENAME", "messages.log")
 SAVE_AS_JSON = settings.get("SAVE_AS_JSON", False)
 
 
-async def watch_console():
+async def watch_console() -> None:
     loop = asyncio.get_event_loop()
     
     await bot.wait_until_ready()
@@ -70,20 +70,20 @@ async def watch_console():
                 print(f"[전송 실패] 메시지를 보내지 못했습니다: {e}")
 
 @bot.event
-async def on_ready():
+async def on_ready() -> None:
     print(f"봇 로그인 완료: {bot.user}")
     asyncio.create_task(watch_console())
 
 CUSTOM_EMOJI_RE = re.compile(r"<a?:([a-zA-Z0-9_]+):\d+>")
 
 
-def resolve_markup(message):
+def resolve_markup(message: discord.Message) -> str:
     # clean_content handles user/channel/role mentions and @everyone/@here.
     content = message.clean_content
     # clean_content leaves custom emoji as-is; render them as :name:.
     return CUSTOM_EMOJI_RE.sub(r":\1:", content)
 
-def convert_names_to_mentions(text, channel):
+def convert_names_to_mentions(text: str, channel: discord.abc.Messageable) -> str:
     mention_pattern = re.compile(r"@([^\s]+)")
     matches = mention_pattern.findall(text)
     
@@ -110,7 +110,7 @@ def convert_names_to_mentions(text, channel):
                 
     return text
 
-def log_message(message, after=None, is_edit=False, is_json=False):
+def log_message(message: discord.Message, after: discord.Message | None = None, is_edit: bool = False, is_json: bool = False) -> None:
     if not SAVE_MESSAGES:
         return
         
@@ -193,7 +193,7 @@ def log_message(message, after=None, is_edit=False, is_json=False):
             f.write(log_line)
 
 @bot.event
-async def on_message(message):
+async def on_message(message: discord.Message):
     if message.author == bot.user:
         return
 
@@ -202,11 +202,18 @@ async def on_message(message):
         log_message(message, is_json=SAVE_AS_JSON)
 
 @bot.event
-async def on_message_edit(before, after):
+async def on_message_edit(before: discord.Message, after: discord.Message):
     if after.author.bot or before.content == after.content:
         return
     if before.channel.id == MONITOR_CHANNEL_ID:
         print(f"[{before.channel.name}] {after.author.name} 수정됨 ({after.created_at.strftime('%Y-%m-%d %H:%M:%S')}) {before.content} -> {after.content}")
         log_message(before, after, is_edit=True, is_json=SAVE_AS_JSON)
+
+@bot.event
+async def on_message_delete(message: discord.Message):
+    if message.author == bot.user:
+        return
+    if message.channel.id == MONITOR_CHANNEL_ID:
+        print(f"[{message.channel.name}] {message.author.name} Deleted ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}")
 
 bot.run(settings.get("TOKEN", "OMG_NO_TOKEN"))
