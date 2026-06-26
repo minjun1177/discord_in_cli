@@ -8,6 +8,7 @@ import sys
 import re
 
 import log
+import src.alert
 
 """
 동작방식?
@@ -35,8 +36,6 @@ ALLOW_MENTION_EVERYONE = settings.get("ALLOW_MENTION_EVERYONE", False)
 SAVE_MESSAGES = settings.get("SAVE_MESSAGES", True)
 SAVE_FILENAME = settings.get("SAVE_FILENAME", "messages.log")
 SAVE_AS_JSON = settings.get("SAVE_AS_JSON", False)
-
-
 
 async def watch_console() -> None:
     loop = asyncio.get_event_loop()
@@ -75,6 +74,7 @@ async def watch_console() -> None:
 @bot.event
 async def on_ready() -> None:
     print(f"봇 로그인 완료: {bot.user}")
+    src.alert.init(bot)
     asyncio.create_task(watch_console())
 
 CUSTOM_EMOJI_RE = re.compile(r"<a?:([a-zA-Z0-9_]+):\d+>")
