@@ -2,7 +2,7 @@
 
 ## TODO
 * [x] ~~Improve user mentions~~
-* [ ] Implement multi-channel support
+* [X] ~~Implement multi-channel support~~
 * [x] ~~Add message saving~~
 * [x] ~~Show 'Edited' tag when a user edits a message~~
 * [X] ~~Show 'Deleted' tag when a user delete a message~~
