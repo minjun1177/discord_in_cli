@@ -8,6 +8,7 @@ import sys
 import re
 
 import log
+import src.alert
 
 """
 동작방식?
@@ -144,6 +145,7 @@ async def on_ready() -> None:
             await get_all_channels(target_guild)
         else:
             print(f"Error: Server with ID {SERVER_ID} not found. Please ensure the bot is invited to the server.")
+    src.alert.init(bot)
     asyncio.create_task(watch_console())
 
 CUSTOM_EMOJI_RE = re.compile(r"<a?:([a-zA-Z0-9_]+):\d+>")

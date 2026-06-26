@@ -10,5 +10,6 @@
     "IMG_RENDER_BY" : "kkity",
     "renderer_list" : ["kitty", "iterm2"], 
     "VERSION" : "v1.0",
-    "USERNAME" : "Sparky"
+    "USERNAME" : "Sparky",
+    "WATCH_ID": [0, 1]
 }
