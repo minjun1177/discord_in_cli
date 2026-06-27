@@ -114,7 +114,7 @@ async def watch_console() -> None:
                         messages = [msg async for msg in selected_channel.history(limit=FETCH_HISTORY_LIMIT)]
                         for msg in reversed(messages):
                             if alert.check(msg):
-                                print(f"[#EA9800 on #2B251C]\[{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}[/]")
+                                print(f"[#EA9800 on #2B251C][{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}[/]")
                             else:
                                 print(f"[{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}")
                     except Exception as e:
@@ -127,6 +127,9 @@ async def watch_console() -> None:
             print("[SYSTEM] Exiting channel selection mode.")
             SELECT_CHANNEL_ID = None
             channel = bot.get_channel(MONITOR_CHANNEL_ID)
+            if SERVER_ID is None:
+                print("[ERROR] SERVER_ID is not set in settings.json. Please provide a valid server ID.")
+                return
             await get_all_channels(bot.get_guild(SERVER_ID))
         elif line.startswith("/"):
             print(f"[ERROR] Unknown command: {line}")
@@ -154,6 +157,9 @@ async def on_ready() -> None:
             await get_all_channels(target_guild)
         else:
             print(f"Error: Server with ID {SERVER_ID} not found. Please ensure the bot is invited to the server.")
+    else:
+        print("Error: SERVER_ID is not set in settings.json. Please provide a valid server ID.")
+        raise ValueError("Error: SERVER_ID is not set in settings.json. Please provide a valid server ID.")
     alert.init(bot)
     asyncio.create_task(watch_console())
 
@@ -202,10 +208,10 @@ async def on_message(message: discord.Message):
 
     if message.channel.id == SELECT_CHANNEL_ID or message.channel.id == MONITOR_CHANNEL_ID:
         if alert.check(message): # #2B251C #EA9800
-            print(f"[#EA9800 on #2B251C]\[{message.channel.name}] {message.author.name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}[/]")
+            print(f"[#EA9800 on #2B251C][{message.channel.name}] {message.author.name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}[/]")
         else:
             author_name = f"[#B4009E]{message.author.name}[/]" if message.author.bot else message.author.name
-            print(f"\[{message.channel.name}] {author_name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}")
+            print(f"[{message.channel.name}] {author_name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}")
         log.log_message(message, is_json=SAVE_AS_JSON)
 
 @bot.event
@@ -216,10 +222,10 @@ async def on_message_edit(before: discord.Message, after: discord.Message):
         return
     if before.channel.id == SELECT_CHANNEL_ID or before.channel.id == MONITOR_CHANNEL_ID:
         if alert.check(after):
-            print(f"[#EA9800 on #2B251C]\[{before.channel.name}] {after.author.name}{'(bot)' if after.author.bot else ''} Modified ({after.created_at.strftime('%Y-%m-%d %H:%M:%S')}) {before.content} -> {after.content}[/]")
+            print(f"[#EA9800 on #2B251C][{before.channel.name}] {after.author.name}{'(bot)' if after.author.bot else ''} Modified ({after.created_at.strftime('%Y-%m-%d %H:%M:%S')}) {before.content} -> {after.content}[/]")
         else:
             author_name = f"[#B4009E]{after.author.name}[/]" if after.author.bot else after.author.name
-            print(f"\[{before.channel.name}] {author_name}{'(bot)' if after.author.bot else ''} Modified ({after.created_at.strftime('%Y-%m-%d %H:%M:%S')}) {before.content} -> {after.content}")
+            print(f"[{before.channel.name}] {author_name}{'(bot)' if after.author.bot else ''} Modified ({after.created_at.strftime('%Y-%m-%d %H:%M:%S')}) {before.content} -> {after.content}")
         log.log_message(before, after, is_edit=True, is_json=SAVE_AS_JSON)
 
 @bot.event
@@ -233,7 +239,7 @@ async def on_message_delete(message: discord.Message):
             print(f"[#EA9800 on #2B251C]\[{message.channel.name}] {message.author.name}{'(bot)' if message.author.bot else ''} Deleted ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}[/]")
         else:
             author_name = f"[#B4009E]{message.author.name}[/]" if message.author.bot else message.author.name
-            print(f"\[{message.channel.name}] {author_name}{'(bot)' if message.author.bot else ''} Deleted ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}")
+            print(f"[{message.channel.name}] {author_name}{'(bot)' if message.author.bot else ''} Deleted ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}")
         log.log_message(message, is_delete=True, is_json=SAVE_AS_JSON)
 
 bot.run(settings.get("TOKEN", "OMG_NO_TOKEN"))

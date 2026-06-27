@@ -19,7 +19,7 @@ def resolve_markup(message: discord.Message) -> str:
     return CUSTOM_EMOJI_RE.sub(r":\1:", content)
 
 def log_message(message: discord.Message, after: discord.Message | None = None, is_edit: bool = False, is_delete: bool = False, is_json: bool = False) -> None:
-    if not SAVE_MESSAGES:
+    if not SAVE_MESSAGES or not SAVE_MESSAGES:
         return
         
     guild_name = message.guild.name if message.guild else "Direct Message"
