@@ -30,7 +30,8 @@ def check(msg: discord.Message) -> bool:
         mentioned_ids = set(msg.raw_mentions)
         for m in msg.mentions:
             mentioned_ids.add(m.id)
-        
+        if msg.mention_everyone:
+            return True
         for id in WATCH_IDS:
             if id in mentioned_ids:
                 return True
