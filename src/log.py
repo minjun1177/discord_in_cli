@@ -60,6 +60,7 @@ def log_message(message: discord.Message, after: discord.Message | None = None, 
             
             with open(SAVE_FILENAME, "a", encoding="utf-8") as f:
                 f.write(log_line)
+        return
 
     if is_edit:
         if is_json:
@@ -99,7 +100,8 @@ def log_message(message: discord.Message, after: discord.Message | None = None, 
             
             with open(SAVE_FILENAME, "a", encoding="utf-8") as f:
                 f.write(log_line)
-
+        return
+    
     if is_json:
         log_data = {
             "type": "message",
@@ -124,8 +126,7 @@ def log_message(message: discord.Message, after: discord.Message | None = None, 
         
         with open(SAVE_FILENAME, "a", encoding="utf-8") as f:
             json.dump(log_data, f, ensure_ascii=False)
-            f.write("\n")
-            
+            f.write("\n")      
     else:
         time_str = message.created_at.strftime("%Y-%m-%d %H:%M:%S")
         
