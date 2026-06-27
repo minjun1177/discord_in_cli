@@ -102,38 +102,39 @@ def log_message(message: discord.Message, after: discord.Message | None = None, 
                 f.write(log_line)
         return
     
-    if is_json:
-        log_data = {
-            "type": "message",
-            "message_id": message.id,
-            "timestamp": message.created_at.isoformat(),
-            "server": {
-                "id": guild_id,
-                "name": guild_name
-            },
-            "channel": {
-                "id": message.channel.id,
-                "name": message.channel.name if hasattr(message.channel, 'name') else "DM"
-            },
-            "author": {
-                "id": message.author.id,
-                "name": message.author.name,
-                "is_bot": message.author.bot
-            },
-            "content": resolve_markup(message),
-            "attachments": [attachment.url for attachment in message.attachments]
-            }
-            
-        with open(SAVE_FILENAME, "a", encoding="utf-8") as f:
-            json.dump(log_data, f, ensure_ascii=False)
-            f.write("\n")
-        
     else:
-        time_str = message.created_at.strftime("%Y-%m-%d %H:%M:%S")
-        
-        attachment_info = f" (첨부파일: {len(message.attachments)}개)" if message.attachments else ""
-        
-        log_line = f"[{time_str}] [{guild_name} / {message.channel.name}] {message.author.name}({message.author.id}): {resolve_markup(message)}{attachment_info}\n"
-        
-        with open(SAVE_FILENAME, "a", encoding="utf-8") as f:
-            f.write(log_line)
+        if is_json:
+            log_data = {
+                "type": "message",
+                "message_id": message.id,
+                "timestamp": message.created_at.isoformat(),
+                "server": {
+                    "id": guild_id,
+                    "name": guild_name
+                },
+                "channel": {
+                    "id": message.channel.id,
+                    "name": message.channel.name if hasattr(message.channel, 'name') else "DM"
+                },
+                "author": {
+                    "id": message.author.id,
+                    "name": message.author.name,
+                    "is_bot": message.author.bot
+                },
+                "content": resolve_markup(message),
+                "attachments": [attachment.url for attachment in message.attachments]
+                }
+                
+            with open(SAVE_FILENAME, "a", encoding="utf-8") as f:
+                json.dump(log_data, f, ensure_ascii=False)
+                f.write("\n")
+            
+        else:
+            time_str = message.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            
+            attachment_info = f" (첨부파일: {len(message.attachments)}개)" if message.attachments else ""
+            
+            log_line = f"[{time_str}] [{guild_name} / {message.channel.name}] {message.author.name}({message.author.id}): {resolve_markup(message)}{attachment_info}\n"
+            
+            with open(SAVE_FILENAME, "a", encoding="utf-8") as f:
+                f.write(log_line)
