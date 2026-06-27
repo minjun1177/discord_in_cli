@@ -79,10 +79,10 @@ async def watch_console() -> None:
     loop = asyncio.get_event_loop()
     
     await bot.wait_until_ready()
-    channel = bot.get_channel(SELECT_CHANNEL_ID if SELECT_CHANNEL_ID is not None else MONITOR_CHANNEL_ID)
+    channel = bot.get_channel(SELECT_CHANNEL_ID if SELECT_CHANNEL_ID else MONITOR_CHANNEL_ID)
     
     if not channel:
-        print(f"[ERROR] Channel with ID {SELECT_CHANNEL_ID if SELECT_CHANNEL_ID is not None else MONITOR_CHANNEL_ID} not found. Please check the ID.")
+        print(f"[ERROR] Channel with ID {SELECT_CHANNEL_ID if SELECT_CHANNEL_ID else MONITOR_CHANNEL_ID} not found. Please check the ID.")
         return
 
     while True:
@@ -131,13 +131,16 @@ async def watch_console() -> None:
         elif line.startswith("/"):
             print(f"[ERROR] Unknown command: {line}")
         else:
-            try:
-                processed_line = convert_names_to_mentions(line, channel)
+            if SELECT_CHANNEL_ID is None:
+                print("[SYSTEM] No channel selected. Please use '/select <channel_id>' to select a channel for monitoring and sending messages.")
+            else:
+                try:
+                    processed_line = convert_names_to_mentions(line, channel)
 
-                await channel.send(f"{USERNAME}: {processed_line}")
-                print(f"{USERNAME}: {line}")
-            except Exception as e:
-                print(f"[TRANSMISSION FAILED] Message can not be sent: {e}")
+                    await channel.send(f"{USERNAME}: {processed_line}")
+                    print(f"{USERNAME}: {line}")
+                except Exception as e:
+                    print(f"[TRANSMISSION FAILED] Message can not be sent: {e}")
 
 @bot.event
 async def on_ready() -> None:
