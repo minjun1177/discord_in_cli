@@ -42,7 +42,6 @@ global img_view_enabled
 img_view_enabled = settings.get("IMG_VIEW_default", False)
 
 async def print_discord_msg(msg, is_edit=False, before=None):
-    global embed_view_enabled, img_view_enabled
     embed_count = len(msg.embeds)
     image_attachments = [a for a in msg.attachments if a.content_type and a.content_type.startswith('image/')]
     if not image_attachments and msg.attachments:

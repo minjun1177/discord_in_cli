@@ -6,7 +6,7 @@
 * [x] ~~Add message saving~~
 * [x] ~~Show 'Edited' tag when a user edits a message~~
 * [X] ~~Show 'Deleted' tag when a user delete a message~~
-* [ ] Image rendering(ascii or terminal render)
+* [X] ~~Image rendering(ascii or terminal render)~~
 * [X] ~~Handle Embeddings and show in terminal~~
 
 ## License
