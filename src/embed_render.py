@@ -3,6 +3,7 @@ from rich.console import Console, Group
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
+from rich.markup import escape
 from rich import print
 
 console = Console()
@@ -19,10 +20,19 @@ def render_embeds_and_components(message: discord.Message) -> None:
 
             embed_elements = []
 
+            if getattr(embed, "author", None) and getattr(embed.author, "name", None):
+                embed_elements.append(Text(f"👤 {embed.author.name}", style="bold cyan"))
             if embed.title:
                 embed_elements.append(Text(f"📌 {embed.title}", style="bold white"))
             if embed.description:
                 embed_elements.append(Text(f"{embed.description}\n"))
+
+            if getattr(embed, "image", None) and getattr(embed.image, "url", None):
+                embed_elements.append(Text(f"🖼️ [Image: {embed.image.url}]", style="dim cyan"))
+            if getattr(embed, "thumbnail", None) and getattr(embed.thumbnail, "url", None):
+                embed_elements.append(Text(f"🖼️ [Thumbnail: {embed.thumbnail.url}]", style="dim cyan"))
+            if getattr(embed, "video", None) and getattr(embed.video, "url", None):
+                embed_elements.append(Text(f"🎬 [Video: {embed.video.url}]", style="dim cyan"))
 
             if embed.fields:
                 field_table = Table(
@@ -69,13 +79,15 @@ def render_embeds_and_components(message: discord.Message) -> None:
                     Text(f"\n{' | '.join(footer_text)}", style="italic dim")
                 )
 
-            if embed_elements:
-                embed_panel = Panel(
-                    Group(*embed_elements),
-                    border_style=hex_color,
-                    padding=(0, 1),
-                )
-                render_components.append(embed_panel)
+            if not embed_elements:
+                embed_elements.append(Text("Unknown or Media-only Embed", style="dim italic"))
+
+            embed_panel = Panel(
+                Group(*embed_elements),
+                border_style=hex_color,
+                padding=(0, 1),
+            )
+            render_components.append(embed_panel)
 
     if message.components:
         render_components.append(Text("\n[ UI Components ]", style="bold yellow"))
@@ -130,7 +142,7 @@ def render_embeds_and_components(message: discord.Message) -> None:
         title="[bold]Embeds / Components[/bold]",
         title_align="left",
         border_style="#7289da",
-        subtitle=f"[dim]Author: {message.author}[/dim]",
+        subtitle=f"[dim]Author: {escape(str(message.author))}[/dim]",
         subtitle_align="right",
     )
 

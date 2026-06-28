@@ -126,19 +126,19 @@ async def watch_console() -> None:
                                     f"Embed {i+1} was hide" for i in range(embed_count)
                                 )
                                 if alert.check(msg):
-                                    print(f"[#EA9800 on #2B251C][{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}][/]")
+                                    print(f"[#EA9800 on #2B251C]\[{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}][/]")
                                 else:
-                                    print(f"[{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}]")
+                                    print(f"\[{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}]")
                             else:
                                 if alert.check(msg):
-                                    print(f"[#EA9800 on #2B251C][{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}[/]")
+                                    print(f"[#EA9800 on #2B251C]\[{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}[/]")
                                 else:
-                                    print(f"[{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}")
+                                    print(f"\[{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}")
                                 if msg.embeds or msg.components:
                                     if embed_view_enabled:
                                         embed_render.render_embeds_and_components(msg)
                                     else:
-                                        print("  [bold dim]\[Embed][/]")
+                                        print("  [bold dim]\\[Embed][/]")
                     except Exception as e:
                         print(f"[ERROR] Could not fetch messages: {e}")
                 else:
@@ -166,23 +166,23 @@ async def watch_console() -> None:
                                     f"Embed {i+1} was hide" for i in range(embed_count)
                                 )
                                 if alert.check(msg):
-                                    print(f"[#EA9800 on #2B251C][{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}][/]")
+                                    print(f"[#EA9800 on #2B251C]\[{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}][/]")
                                 else:
                                     author_name = f"[#B4009E]{msg.author.name}[/]" if msg.author.bot else msg.author.name
-                                    print(f"[{msg.channel.name}] {author_name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}]")
+                                    print(f"\[{msg.channel.name}] {author_name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}]")
                             else:
                                 # Normal message display
                                 if alert.check(msg):
-                                    print(f"[#EA9800 on #2B251C][{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}[/]")
+                                    print(f"[#EA9800 on #2B251C]\[{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}[/]")
                                 else:
                                     author_name = f"[#B4009E]{msg.author.name}[/]" if msg.author.bot else msg.author.name
-                                    print(f"[{msg.channel.name}] {author_name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}")
+                                    print(f"\[{msg.channel.name}] {author_name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}")
                                 # Show embed details or [Embed] tag based on current mode
                                 if msg.embeds or msg.components:
                                     if embed_view_enabled:
                                         embed_render.render_embeds_and_components(msg)
                                     else:
-                                        print("  [bold dim]\[Embed][/]")
+                                        print("  [bold dim]\\[Embed][/]")
                     except Exception as e:
                         print(f"[ERROR] Could not refresh messages: {e}")
             else:
@@ -281,21 +281,21 @@ async def on_message(message: discord.Message):
                 f"Embed {i+1} was hide" for i in range(embed_count)
             )
             if alert.check(message):
-                print(f"[#EA9800 on #2B251C][{message.channel.name}] {message.author.name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}][/]")
+                print(f"[#EA9800 on #2B251C]\[{message.channel.name}] {message.author.name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}][/]")
             else:
                 author_name = f"[#B4009E]{message.author.name}[/]" if message.author.bot else message.author.name
-                print(f"[{message.channel.name}] {author_name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}]")
+                print(f"\[{message.channel.name}] {author_name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}]")
         else:
             if alert.check(message): # #2B251C #EA9800
-                print(f"[#EA9800 on #2B251C][{message.channel.name}] {message.author.name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}[/]")
+                print(f"[#EA9800 on #2B251C]\[{message.channel.name}] {message.author.name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}[/]")
             else:
                 author_name = f"[#B4009E]{message.author.name}[/]" if message.author.bot else message.author.name
-                print(f"[{message.channel.name}] {author_name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}")
+                print(f"\[{message.channel.name}] {author_name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}")
             if message.embeds or message.components:
                 if embed_view_enabled:
                     embed_render.render_embeds_and_components(message)
                 else:
-                    print("  [bold dim]\[Embed][/]")
+                    print("  [bold dim]\\[Embed][/]")
         log.log_message(message, is_json=SAVE_AS_JSON)
 
 @bot.event
@@ -306,15 +306,15 @@ async def on_message_edit(before: discord.Message, after: discord.Message):
         return
     if before.channel.id == SELECT_CHANNEL_ID or before.channel.id == MONITOR_CHANNEL_ID:
         if alert.check(after):
-            print(f"[#EA9800 on #2B251C][{before.channel.name}] {after.author.name}{'(bot)' if after.author.bot else ''} Modified ({after.created_at.strftime('%Y-%m-%d %H:%M:%S')}) {before.content} -> {after.content}[/]")
+            print(f"[#EA9800 on #2B251C]\[{before.channel.name}] {after.author.name}{'(bot)' if after.author.bot else ''} Modified ({after.created_at.strftime('%Y-%m-%d %H:%M:%S')}) {before.content} -> {after.content}[/]")
         else:
             author_name = f"[#B4009E]{after.author.name}[/]" if after.author.bot else after.author.name
-            print(f"[{before.channel.name}] {author_name}{'(bot)' if after.author.bot else ''} Modified ({after.created_at.strftime('%Y-%m-%d %H:%M:%S')}) {before.content} -> {after.content}")
+            print(f"\[{before.channel.name}] {author_name}{'(bot)' if after.author.bot else ''} Modified ({after.created_at.strftime('%Y-%m-%d %H:%M:%S')}) {before.content} -> {after.content}")
         if after.embeds or after.components:
             if embed_view_enabled:
                 embed_render.render_embeds_and_components(after)
             else:
-                print("  [bold dim]\[Embed][/]")
+                print("  [bold dim]\\[Embed][/]")
         log.log_message(before, after, is_edit=True, is_json=SAVE_AS_JSON)
 
 @bot.event
@@ -325,10 +325,10 @@ async def on_message_delete(message: discord.Message):
         return
     if message.channel.id == SELECT_CHANNEL_ID or message.channel.id == MONITOR_CHANNEL_ID:
         if alert.check(message):
-            print(f"[#EA9800 on #2B251C]\[{message.channel.name}] {message.author.name}{'(bot)' if message.author.bot else ''} Deleted ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}[/]")
+            print(f"[#EA9800 on #2B251C]\\[{message.channel.name}] {message.author.name}{'(bot)' if message.author.bot else ''} Deleted ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}[/]")
         else:
             author_name = f"[#B4009E]{message.author.name}[/]" if message.author.bot else message.author.name
-            print(f"[{message.channel.name}] {author_name}{'(bot)' if message.author.bot else ''} Deleted ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}")
+            print(f"\[{message.channel.name}] {author_name}{'(bot)' if message.author.bot else ''} Deleted ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}")
         log.log_message(message, is_delete=True, is_json=SAVE_AS_JSON)
 
 bot.run(settings.get("TOKEN", "OMG_NO_TOKEN"))
