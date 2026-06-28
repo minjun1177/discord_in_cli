@@ -10,6 +10,7 @@ from rich import print
 
 import src.log as log
 import src.alert as alert
+import src.embed_render as embed_render
 
 """
 동작방식?
@@ -49,9 +50,13 @@ SAVE_FILENAME = settings.get("SAVE_FILENAME", "messages.log")
 SAVE_AS_JSON = settings.get("SAVE_AS_JSON", False)
 SERVER_ID = int(settings.get("SERVER_ID", None)) if settings.get("SERVER_ID") else None
 FETCH_HISTORY_LIMIT = int(settings.get("FETCH_HISTORY_LIMIT", 10))
+EMBED_VIEW_DEF = settings.get("EMBED_VIEW_default", False)
 
 global SELECT_CHANNEL_ID
 SELECT_CHANNEL_ID = None
+
+global embed_view_enabled
+embed_view_enabled = EMBED_VIEW_DEF
 
 async def get_all_channels(target_guild: discord.Guild) -> None:
     bot_member = target_guild.me 
@@ -75,7 +80,7 @@ async def get_all_channels(target_guild: discord.Guild) -> None:
     print("\nUse '/select <channel_id>' to select a channel for monitoring and sending messages.")
 
 async def watch_console() -> None:
-    global SELECT_CHANNEL_ID
+    global SELECT_CHANNEL_ID, embed_view_enabled
     loop = asyncio.get_event_loop()
     
     await bot.wait_until_ready()
@@ -113,16 +118,75 @@ async def watch_console() -> None:
                     try:
                         messages = [msg async for msg in selected_channel.history(limit=FETCH_HISTORY_LIMIT)]
                         for msg in reversed(messages):
-                            if alert.check(msg):
-                                print(f"[#EA9800 on #2B251C][{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}[/]")
+                            embed_count = len(msg.embeds)
+                            has_content = bool(msg.clean_content.strip())
+                            # When embed is closed and message has only embeds (no text content)
+                            if not embed_view_enabled and embed_count > 0 and not has_content:
+                                embed_hide_text = ", ".join(
+                                    f"Embed {i+1} was hide" for i in range(embed_count)
+                                )
+                                if alert.check(msg):
+                                    print(f"[#EA9800 on #2B251C][{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}][/]")
+                                else:
+                                    print(f"[{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}]")
                             else:
-                                print(f"[{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}")
+                                if alert.check(msg):
+                                    print(f"[#EA9800 on #2B251C][{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}[/]")
+                                else:
+                                    print(f"[{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}")
+                                if msg.embeds or msg.components:
+                                    if embed_view_enabled:
+                                        embed_render.render_embeds_and_components(msg)
+                                    else:
+                                        print("  [bold dim]\[Embed][/]")
                     except Exception as e:
                         print(f"[ERROR] Could not fetch messages: {e}")
                 else:
                     print(f"[ERROR] Channel with ID {temp_id} not found.")
             else:
                 print("[ERROR] Invalid command. Use '/select <channel_id>'.")
+        elif line.startswith("/embed"):
+            parts = line.split()
+            if len(parts) == 2 and parts[1] in ("open", "close"):
+                embed_view_enabled = parts[1] == "open"
+                status = "enabled" if embed_view_enabled else "disabled"
+                print(f"[SYSTEM] Embed rendering is now {status}.")
+                # Re-fetch and re-display messages with updated embed visibility
+                current_ch = bot.get_channel(SELECT_CHANNEL_ID) if SELECT_CHANNEL_ID else None
+                if current_ch:
+                    print(f"[SYSTEM] Refreshing messages from '{current_ch.name}'...")
+                    try:
+                        messages = [msg async for msg in current_ch.history(limit=FETCH_HISTORY_LIMIT)]
+                        for msg in reversed(messages):
+                            embed_count = len(msg.embeds)
+                            has_content = bool(msg.clean_content.strip())
+                            # When embed is closed and message has only embeds (no text content)
+                            if not embed_view_enabled and embed_count > 0 and not has_content:
+                                embed_hide_text = ", ".join(
+                                    f"Embed {i+1} was hide" for i in range(embed_count)
+                                )
+                                if alert.check(msg):
+                                    print(f"[#EA9800 on #2B251C][{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}][/]")
+                                else:
+                                    author_name = f"[#B4009E]{msg.author.name}[/]" if msg.author.bot else msg.author.name
+                                    print(f"[{msg.channel.name}] {author_name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}]")
+                            else:
+                                # Normal message display
+                                if alert.check(msg):
+                                    print(f"[#EA9800 on #2B251C][{msg.channel.name}] {msg.author.name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}[/]")
+                                else:
+                                    author_name = f"[#B4009E]{msg.author.name}[/]" if msg.author.bot else msg.author.name
+                                    print(f"[{msg.channel.name}] {author_name}{'(bot)' if msg.author.bot else ''} ({msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(msg)}")
+                                # Show embed details or [Embed] tag based on current mode
+                                if msg.embeds or msg.components:
+                                    if embed_view_enabled:
+                                        embed_render.render_embeds_and_components(msg)
+                                    else:
+                                        print("  [bold dim]\[Embed][/]")
+                    except Exception as e:
+                        print(f"[ERROR] Could not refresh messages: {e}")
+            else:
+                print("[ERROR] Usage: /embed open or /embed close")
         elif line == "/exit":
             print("[SYSTEM] Exiting channel selection mode.")
             SELECT_CHANNEL_ID = None
@@ -152,7 +216,9 @@ async def on_ready() -> None:
     target_guild = None
     if SERVER_ID:
         target_guild = bot.get_guild(SERVER_ID)
-        
+        game = discord.Game(f"Logined as {USERNAME}")
+        await bot.change_presence(status=discord.Status.online, activity=game)
+
         if target_guild:
             await get_all_channels(target_guild)
         else:
@@ -207,11 +273,29 @@ async def on_message(message: discord.Message):
         return
 
     if message.channel.id == SELECT_CHANNEL_ID or message.channel.id == MONITOR_CHANNEL_ID:
-        if alert.check(message): # #2B251C #EA9800
-            print(f"[#EA9800 on #2B251C][{message.channel.name}] {message.author.name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}[/]")
+        embed_count = len(message.embeds)
+        has_content = bool(message.clean_content.strip())
+        # When embed is closed and message has only embeds (no text content)
+        if not embed_view_enabled and embed_count > 0 and not has_content:
+            embed_hide_text = ", ".join(
+                f"Embed {i+1} was hide" for i in range(embed_count)
+            )
+            if alert.check(message):
+                print(f"[#EA9800 on #2B251C][{message.channel.name}] {message.author.name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}][/]")
+            else:
+                author_name = f"[#B4009E]{message.author.name}[/]" if message.author.bot else message.author.name
+                print(f"[{message.channel.name}] {author_name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): \[{embed_hide_text}]")
         else:
-            author_name = f"[#B4009E]{message.author.name}[/]" if message.author.bot else message.author.name
-            print(f"[{message.channel.name}] {author_name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}")
+            if alert.check(message): # #2B251C #EA9800
+                print(f"[#EA9800 on #2B251C][{message.channel.name}] {message.author.name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}[/]")
+            else:
+                author_name = f"[#B4009E]{message.author.name}[/]" if message.author.bot else message.author.name
+                print(f"[{message.channel.name}] {author_name}{'(bot)' if message.author.bot else ''} ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}")
+            if message.embeds or message.components:
+                if embed_view_enabled:
+                    embed_render.render_embeds_and_components(message)
+                else:
+                    print("  [bold dim]\[Embed][/]")
         log.log_message(message, is_json=SAVE_AS_JSON)
 
 @bot.event
@@ -226,6 +310,11 @@ async def on_message_edit(before: discord.Message, after: discord.Message):
         else:
             author_name = f"[#B4009E]{after.author.name}[/]" if after.author.bot else after.author.name
             print(f"[{before.channel.name}] {author_name}{'(bot)' if after.author.bot else ''} Modified ({after.created_at.strftime('%Y-%m-%d %H:%M:%S')}) {before.content} -> {after.content}")
+        if after.embeds or after.components:
+            if embed_view_enabled:
+                embed_render.render_embeds_and_components(after)
+            else:
+                print("  [bold dim]\[Embed][/]")
         log.log_message(before, after, is_edit=True, is_json=SAVE_AS_JSON)
 
 @bot.event

@@ -7,6 +7,8 @@
     "SAVE_AS_JSON" : false,
     "SAVE_FILENAME" : "messages.log",
     "FETCH_HISTORY_LIMIT" : 10,
+    "EMBED_VIEW_default" : false,
+    "IMG_VIEW_default" : false,
     "IMG_RENDER_BY" : "kkity",
     "renderer_list" : ["kitty", "iterm2"], 
     "VERSION" : "v1.0",
