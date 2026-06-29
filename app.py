@@ -41,7 +41,7 @@ embed_view_enabled = EMBED_VIEW_DEF
 global img_view_enabled
 img_view_enabled = settings.get("IMG_VIEW_default", False)
 
-async def print_discord_msg(msg, is_edit=False, before=None):
+async def print_discord_msg(msg, is_edit=False, before=None) -> None:
     embed_count = len(msg.embeds)
     image_attachments = [a for a in msg.attachments if a.content_type and a.content_type.startswith('image/')]
     if not image_attachments and msg.attachments:
@@ -283,7 +283,7 @@ def convert_names_to_mentions(text: str, channel: discord.abc.Messageable) -> st
     return text
 
 @bot.event
-async def on_message(message: discord.Message):
+async def on_message(message: discord.Message) -> None:
     if SELECT_CHANNEL_ID is not None and message.channel.id != SELECT_CHANNEL_ID:
         return
     if message.author == bot.user:
@@ -294,19 +294,21 @@ async def on_message(message: discord.Message):
         log.log_message(message, is_json=SAVE_AS_JSON)
 
 @bot.event
-async def on_message_edit(before: discord.Message, after: discord.Message):
+async def on_message_edit(before: discord.Message, after: discord.Message) -> None:
     if SELECT_CHANNEL_ID is not None and before.channel.id != SELECT_CHANNEL_ID:
         return
     if (before.content == after.content
             and before.attachments == after.attachments
             and before.embeds == after.embeds):
         return
+    if before.author == bot.user:
+        return
     if before.channel.id == SELECT_CHANNEL_ID or before.channel.id == MONITOR_CHANNEL_ID:
         await print_discord_msg(after, is_edit=True, before=before)
         log.log_message(before, after, is_edit=True, is_json=SAVE_AS_JSON)
 
 @bot.event
-async def on_message_delete(message: discord.Message):
+async def on_message_delete(message: discord.Message) -> None:
     if SELECT_CHANNEL_ID is not None and message.channel.id != SELECT_CHANNEL_ID:
         return
     if message.author == bot.user:
