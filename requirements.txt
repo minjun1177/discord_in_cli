@@ -1,3 +1,5 @@
 py-cord>=2.4
 climage
 rich
+climage
+pillow
