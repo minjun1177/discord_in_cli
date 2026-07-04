@@ -212,6 +212,38 @@ async def watch_console() -> None:
                 print("[ERROR] SERVER_ID is not set in settings.json. Please provide a valid server ID.")
                 return
             await get_all_channels(bot.get_guild(SERVER_ID))
+        elif line.startswith("/setrpc"):
+            # cmd like this: /setrpc <text> [status] but status can be optional and can be one of: online, idle, dnd, offline
+            # status is always the LAST word if it matches a known status keyword
+            VALID_STATUSES = {"online", "idle", "dnd", "offline"}
+            raw = line[len("/setrpc"):].strip()
+            if not raw:
+                print("[ERROR] Usage: /setrpc <activity text> [online|idle|dnd|offline]")
+            else:
+                new_status = discord.Status.online
+                tokens = raw.rsplit(maxsplit=1)
+                if len(tokens) == 2 and tokens[1].lower() in VALID_STATUSES:
+                    activity_text = tokens[0]
+                    status_str = tokens[1].lower()
+                else:
+                    activity_text = raw
+                    status_str = "online"
+
+                if status_str == "online":
+                    new_status = discord.Status.online
+                elif status_str == "idle":
+                    new_status = discord.Status.idle
+                elif status_str == "dnd":
+                    new_status = discord.Status.dnd
+                elif status_str == "offline":
+                    new_status = discord.Status.invisible
+
+                activity = discord.Activity(
+                    type=discord.ActivityType.playing,
+                    name=activity_text
+                )
+                await bot.change_presence(status=new_status, activity=activity)
+                print(f"[SYSTEM] Rich Presence set to '{activity_text}' with status '{new_status}'.")
         elif line.startswith("/"):
             print(f"[ERROR] Unknown command: {line}")
         else:
