@@ -187,6 +187,7 @@ Use '/select <channel_id>' to select a channel for monitoring and sending messag
 | `/img open` / `/img close` | 사진을 터미널에 그려서 보기 켜기/끄기 |
 | `/stop` | 봇 끄기 (안전하게 종료) |
 | `/setrpc` | 봇 활동 설정 |
+| `/refresh` | 메시지 새로고침 |
 | `안녕하세요` | (`/` 없이) 그냥 치면 → 그 채널에 메시지 전송! |
 | `@닉네임 안녕` | `@닉네임`은 자동으로 진짜 멘션으로 바뀌어서 전송돼요 |
 

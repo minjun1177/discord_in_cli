@@ -244,6 +244,18 @@ async def watch_console() -> None:
                 )
                 await bot.change_presence(status=new_status, activity=activity)
                 print(f"[SYSTEM] Rich Presence set to '{activity_text}' with status '{new_status}'.")
+        elif line == "/refresh":
+            current_ch = bot.get_channel(SELECT_CHANNEL_ID) if SELECT_CHANNEL_ID else None
+            if current_ch:
+                print(f"[SYSTEM] Refreshing messages from '{current_ch.name}'...")
+                try:
+                    messages = [msg async for msg in current_ch.history(limit=FETCH_HISTORY_LIMIT)]
+                    for msg in reversed(messages):
+                        await print_discord_msg(msg)
+                except Exception as e:
+                    print(f"[ERROR] Could not refresh messages: {e}")
+            else:
+                print("[ERROR] No channel selected to refresh.")
         elif line.startswith("/"):
             print(f"[ERROR] Unknown command: {line}")
         else:
