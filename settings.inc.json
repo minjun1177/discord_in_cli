@@ -9,6 +9,7 @@
     "FETCH_HISTORY_LIMIT" : 10,
     "EMBED_VIEW_default" : false,
     "IMG_VIEW_default" : false,
+    "MSG_HISTORY_MAX" : 50,
     "IMG_RENDER_BY" : "kkity",
     "renderer_list" : ["kitty", "iterm2"], 
     "VERSION" : "v1.0",

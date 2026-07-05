@@ -31,6 +31,7 @@ SAVE_AS_JSON = settings.get("SAVE_AS_JSON", False)
 SERVER_ID = int(settings.get("SERVER_ID", None)) if settings.get("SERVER_ID") else None
 FETCH_HISTORY_LIMIT = int(settings.get("FETCH_HISTORY_LIMIT", 10))
 EMBED_VIEW_DEF = settings.get("EMBED_VIEW_default", False)
+MSG_HISTORY_MAX = settings.get("MSG_HISTORY_MAX", 50)
 
 global SELECT_CHANNEL_ID
 SELECT_CHANNEL_ID = None
@@ -40,6 +41,15 @@ embed_view_enabled = EMBED_VIEW_DEF
 
 global img_view_enabled
 img_view_enabled = settings.get("IMG_VIEW_default", False)
+
+channel_messages: list[discord.Message] = []
+
+def _add_to_channel_messages(msg: discord.Message) -> None:
+    if any(m.id == msg.id for m in channel_messages):
+        return
+    channel_messages.append(msg)
+    if len(channel_messages) > MSG_HISTORY_MAX:
+        channel_messages.pop(0)
 
 async def print_discord_msg(msg, is_edit=False, before=None) -> None:
     embed_count = len(msg.embeds)
@@ -158,11 +168,13 @@ async def watch_console() -> None:
                 if selected_channel:
                     SELECT_CHANNEL_ID = temp_id
                     channel = selected_channel
+                    channel_messages.clear()
                     print(f"[SYSTEM] Selected channel ID: {SELECT_CHANNEL_ID} ('{selected_channel.name}')")
                     print(f"[SYSTEM] Fetching last {FETCH_HISTORY_LIMIT} messages from '{selected_channel.name}'...")
                     try:
                         messages = [msg async for msg in selected_channel.history(limit=FETCH_HISTORY_LIMIT)]
                         for msg in reversed(messages):
+                            _add_to_channel_messages(msg)
                             await print_discord_msg(msg)
                     except Exception as e:
                         print(f"[ERROR] Could not fetch messages: {e}")
@@ -181,7 +193,9 @@ async def watch_console() -> None:
                     print(f"[SYSTEM] Refreshing messages from '{current_ch.name}'...")
                     try:
                         messages = [msg async for msg in current_ch.history(limit=FETCH_HISTORY_LIMIT)]
+                        channel_messages.clear()
                         for msg in reversed(messages):
+                            _add_to_channel_messages(msg)
                             await print_discord_msg(msg)
                     except Exception as e:
                         print(f"[ERROR] Could not refresh messages: {e}")
@@ -198,7 +212,9 @@ async def watch_console() -> None:
                     print(f"[SYSTEM] Refreshing messages from '{current_ch.name}'...")
                     try:
                         messages = [msg async for msg in current_ch.history(limit=FETCH_HISTORY_LIMIT)]
+                        channel_messages.clear()
                         for msg in reversed(messages):
+                            _add_to_channel_messages(msg)
                             await print_discord_msg(msg)
                     except Exception as e:
                         print(f"[ERROR] Could not refresh messages: {e}")
@@ -207,6 +223,7 @@ async def watch_console() -> None:
         elif line == "/exit":
             print("[SYSTEM] Exiting channel selection mode.")
             SELECT_CHANNEL_ID = None
+            channel_messages.clear()
             channel = bot.get_channel(MONITOR_CHANNEL_ID)
             if SERVER_ID is None:
                 print("[ERROR] SERVER_ID is not set in settings.json. Please provide a valid server ID.")
@@ -250,12 +267,152 @@ async def watch_console() -> None:
                 print(f"[SYSTEM] Refreshing messages from '{current_ch.name}'...")
                 try:
                     messages = [msg async for msg in current_ch.history(limit=FETCH_HISTORY_LIMIT)]
+                    channel_messages.clear()
                     for msg in reversed(messages):
+                        _add_to_channel_messages(msg)
                         await print_discord_msg(msg)
                 except Exception as e:
                     print(f"[ERROR] Could not refresh messages: {e}")
             else:
                 print("[ERROR] No channel selected to refresh.")
+        elif line.startswith("/messages"):
+            parts = line.split(maxsplit=1)
+            if len(parts) == 2 and parts[1] == "all":
+                my_messages = [(i, msg) for i, msg in enumerate(reversed(channel_messages), 1)]
+            else:
+                my_messages = [(i, msg) for i, msg in enumerate(reversed(channel_messages), 1)
+                               if msg.author == bot.user]
+            if not my_messages:
+                print("[SYSTEM] No sent messages in history.")
+            else:
+                print(f"[SYSTEM] Your sent messages (newest first):")
+                for i, msg in reversed(my_messages):
+                    author_name = f"[#B4009E]{msg.author.name}[/]" if msg.author.bot else msg.author.name
+                    resolved = resolve_markup(msg)
+                    resolved = convert_names_to_mentions(resolved, channel)
+                    preview = resolved[:50] + ("..." if len(resolved) > 50 else "")
+                    time_str = msg.created_at.strftime('%H:%M:%S')
+                    print(f"  ~{i}  {author_name} ({time_str}) {preview}")
+                print(f"[SYSTEM] Use '/edit <new text>' or '/edit ~N <new text>' to edit.")
+                print(f"[SYSTEM] Use '/reply <text>' or '/reply ~N <text>' to reply to a message.")
+
+        elif line.startswith("/edit"):
+            # /edit <new_content>         -> edit last message in channel
+            # /edit ~N <new_content>      -> edit Nth most recent channel message
+            # /editmsg <id> <new_content> -> edit by message ID (fallback)
+            raw = line.split(maxsplit=1)
+            cmd = raw[0]  # "/edit" or "/editmsg"
+            rest = raw[1].strip() if len(raw) > 1 else ""
+
+            if cmd == "/editmsg":
+                parts = rest.split(maxsplit=1)
+                if len(parts) < 2 or not parts[0].isdigit():
+                    print("[ERROR] Usage: /editmsg <message_id> <new_content>")
+                    continue
+                message_id = int(parts[0])
+                new_content = parts[1]
+                try:
+                    target_message = await channel.fetch_message(message_id)
+                    await target_message.edit(content=new_content)
+                    print(f"[SYSTEM] Edited message ID {message_id} to: {new_content}")
+                except discord.NotFound:
+                    print(f"[ERROR] Message with ID {message_id} not found in the selected channel.")
+                except discord.Forbidden:
+                    print(f"[ERROR] Bot does not have permission to edit message ID {message_id}.")
+                except Exception as e:
+                    print(f"[ERROR] Failed to edit message ID {message_id}: {e}")
+            else:
+                # /edit command — history-based editing
+                if not rest:
+                    print("[ERROR] Usage: /edit <new text>  or  /edit ~N <new text>")
+                    print("        /edit hello world     → edit last message")
+                    print("        /edit ~3 hello world  → edit 3rd most recent message")
+                    print("        /messages             → list recent channel messages")
+                    continue
+
+                if not channel_messages:
+                    print("[ERROR] No messages in history to edit. Use /select or /refresh first.")
+                    continue
+
+                index = 1
+                new_content = rest
+                if rest.startswith("~"):
+                    idx_parts = rest.split(maxsplit=1)
+                    idx_str = idx_parts[0][1:]  # strip '~'
+                    if idx_str.isdigit() and len(idx_parts) == 2:
+                        index = int(idx_str)
+                        new_content = idx_parts[1]
+                    else:
+                        print("[ERROR] Usage: /edit ~N <new text>  (N = message number from /messages)")
+                        continue
+
+                if index < 1 or index > len(channel_messages):
+                    print(f"[ERROR] Index ~{index} is out of range. You have {len(channel_messages)} message(s) in history. Use /messages to see them.")
+                    continue
+
+                target_message = channel_messages[-index]
+                if target_message.author != bot.user:
+                    print(f"[ERROR] ~{index} is a message by '{target_message.author.name}'. You can only edit the bot's own messages (marked ★ in /messages).")
+                    continue
+                try:
+                    await target_message.edit(content=f"{USERNAME}: {new_content}")
+                    print(f"[SYSTEM] Edited message ~{index} to: {new_content}")
+                except discord.NotFound:
+                    print(f"[ERROR] Message ~{index} was deleted and can no longer be edited.")
+                    channel_messages.remove(target_message)
+                except discord.Forbidden:
+                    print(f"[ERROR] Bot does not have permission to edit that message.")
+                except Exception as e:
+                    print(f"[ERROR] Failed to edit message: {e}")
+        elif line.startswith("/reply"):
+            # /reply <content>        -> reply to the last message
+            # /reply ~N <content>     -> reply to the Nth most recent message
+            rest = line[len("/reply"):].strip()
+
+            if not rest:
+                print("[ERROR] Usage: /reply <text>  or  /reply ~N <text>")
+                print("        /reply hello          → reply to last message")
+                print("        /reply ~3 hello       → reply to 3rd most recent message")
+                continue
+
+            if not channel_messages:
+                print("[ERROR] No messages in history to reply to. Use /select or /refresh first.")
+                continue
+
+            # Parse optional ~N index
+            index = 1  # default: most recent
+            reply_content = rest
+            if rest.startswith("~"):
+                idx_parts = rest.split(maxsplit=1)
+                idx_str = idx_parts[0][1:]  # strip '~'
+                if idx_str.isdigit() and len(idx_parts) == 2:
+                    index = int(idx_str)
+                    reply_content = idx_parts[1]
+                else:
+                    print("[ERROR] Usage: /reply ~N <text>  (N = message number from /messages)")
+                    continue
+
+            if index < 1 or index > len(channel_messages):
+                print(f"[ERROR] Index ~{index} is out of range. You have {len(channel_messages)} message(s) in history.")
+                continue
+
+            target_message = channel_messages[-index]
+            try:
+                processed_reply = convert_names_to_mentions(reply_content, channel)
+                sent_msg = await channel.send(
+                    f"{USERNAME}: {processed_reply}",
+                    reference=target_message.to_reference(),
+                    mention_author=False
+                )
+                _add_to_channel_messages(sent_msg)
+                resolved_target = resolve_markup(target_message)
+                target_preview = resolved_target[:30] + ("..." if len(resolved_target) > 30 else "")
+                print(f"[SYSTEM] Replied to ~{index} ({target_message.author.name}: {target_preview})")
+            except discord.NotFound:
+                print(f"[ERROR] Message ~{index} was deleted and can no longer be replied to.")
+                channel_messages.remove(target_message)
+            except discord.HTTPException as e:
+                print(f"[ERROR] Failed to reply: {e}")
         elif line.startswith("/"):
             print(f"[ERROR] Unknown command: {line}")
         else:
@@ -265,7 +422,8 @@ async def watch_console() -> None:
                 try:
                     processed_line = convert_names_to_mentions(line, channel)
 
-                    await channel.send(f"{USERNAME}: {processed_line}")
+                    sent_msg = await channel.send(f"{USERNAME}: {processed_line}")
+                    _add_to_channel_messages(sent_msg)
                     print(f"{USERNAME}: {line}")
                 except Exception as e:
                     print(f"[TRANSMISSION FAILED] Message can not be sent: {e}")
@@ -330,10 +488,11 @@ def convert_names_to_mentions(text: str, channel: discord.abc.Messageable) -> st
 async def on_message(message: discord.Message) -> None:
     if SELECT_CHANNEL_ID is not None and message.channel.id != SELECT_CHANNEL_ID:
         return
-    if message.author == bot.user:
-        return
 
     if message.channel.id == SELECT_CHANNEL_ID or message.channel.id == MONITOR_CHANNEL_ID:
+        _add_to_channel_messages(message)
+        if message.author == bot.user:
+            return
         await print_discord_msg(message)
         log.log_message(message, is_json=SAVE_AS_JSON)
 
@@ -355,6 +514,8 @@ async def on_message_edit(before: discord.Message, after: discord.Message) -> No
 async def on_message_delete(message: discord.Message) -> None:
     if SELECT_CHANNEL_ID is not None and message.channel.id != SELECT_CHANNEL_ID:
         return
+    # Remove from channel_messages buffer
+    channel_messages[:] = [m for m in channel_messages if m.id != message.id]
     if message.author == bot.user:
         return
     if message.channel.id == SELECT_CHANNEL_ID or message.channel.id == MONITOR_CHANNEL_ID:
