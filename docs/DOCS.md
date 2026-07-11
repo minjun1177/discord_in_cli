@@ -186,10 +186,43 @@ Use '/select <channel_id>' to select a channel for monitoring and sending messag
 | `/embed open` / `/embed close` | 임베드(카드 메시지) 펼쳐보기 켜기/끄기 |
 | `/img open` / `/img close` | 사진을 터미널에 그려서 보기 켜기/끄기 |
 | `/stop` | 봇 끄기 (안전하게 종료) |
-| `/setrpc` | 봇 활동 설정 |
-| `/refresh` | 메시지 새로고침 |
+| `/setrpc <텍스트> [online\|idle\|dnd\|offline]` | 봇 활동(RPC)과 상태 설정 |
+| `/refresh` | 현재 선택 채널의 최근 메시지 새로고침 |
+| `/messages` | 최근 메시지 목록에서 내가 보낸 메시지 보기 |
+| `/messages all` | 최근 메시지 목록 전체 보기 |
+| `/edit <새 내용>` | 가장 최근 내가 보낸 메시지 수정 |
+| `/edit ~N <새 내용>` | 최근 메시지 기준 N번째 메시지 수정 |
+| `/reply <내용>` | 가장 최근 메시지에 답글 전송 |
+| `/reply ~N <내용>` | 최근 메시지 기준 N번째 메시지에 답글 전송 |
+| `/uploadfile <파일경로>` | 로컬 파일 업로드 |
+| `/downloadfile ~N [첨부번호] [저장경로]` | 최근 메시지 기준 첨부파일 다운로드 |
+| `/downloadfile <메시지ID> [첨부번호] [저장경로]` | 메시지 ID 기준 첨부파일 다운로드 |
 | `안녕하세요` | (`/` 없이) 그냥 치면 → 그 채널에 메시지 전송! |
 | `@닉네임 안녕` | `@닉네임`은 자동으로 진짜 멘션으로 바뀌어서 전송돼요 |
+
+### 메시지 관리 명령 한눈에 보기
+
+```text
+/messages
+/messages all
+/edit 안녕하세요 (최근 내 메시지 수정)
+/edit ~3 수정할 내용
+/reply 답글 내용
+/reply ~2 특정 메시지로 답글
+```
+
+### 파일 다운로드 명령 자세히
+
+```text
+/downloadfile ~1
+/downloadfile ~2 1
+/downloadfile ~3 2 downloads
+/downloadfile 123456789012345678 1 C:/tmp/file.png
+```
+
+- `첨부번호`를 생략하면 1번 첨부파일을 받습니다.
+- `저장경로`를 생략하면 `downloads` 폴더가 자동 생성됩니다.
+- 같은 이름 파일이 이미 있으면 `_1`, `_2`가 붙어서 저장됩니다.
 
 ### 사용 예시 흐름 🌟
 
@@ -199,7 +232,8 @@ Use '/select <channel_id>' to select a channel for monitoring and sending messag
 3. (사람들 채팅이 실시간으로 보임)
 4. 안녕 다들 뭐해?       ← 그냥 치면 메시지 전송됨
 5. /img open            ← 사진도 터미널에서 보고 싶을 때
-6. /stop                ← 다 했으면 끄기
+6. /downloadfile ~1     ← 최근 메시지 첨부파일 다운로드
+7. /stop                ← 다 했으면 끄기
 ```
 
 ---

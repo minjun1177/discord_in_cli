@@ -413,6 +413,115 @@ async def watch_console() -> None:
                 channel_messages.remove(target_message)
             except discord.HTTPException as e:
                 print(f"[ERROR] Failed to reply: {e}")
+        elif line.startswith("/uploadfile"):
+            parts = line.split(maxsplit=1)
+            if len(parts) != 2:
+                print("[ERROR] Usage: /uploadfile <file_path>")
+                continue
+            file_path = parts[1]
+            if not os.path.isfile(file_path):
+                print(f"[ERROR] File '{file_path}' does not exist.")
+                continue
+            try:
+                with open(file_path, 'rb') as f:
+                    discord_file = discord.File(f)
+                    sent_msg = await channel.send(f"{USERNAME} uploaded a file:", file=discord_file)
+                    _add_to_channel_messages(sent_msg)
+                    print(f"[SYSTEM] Uploaded file '{file_path}' to channel '{channel.name}'.")
+            except Exception as e:
+                print(f"[ERROR] Failed to upload file: {e}")
+
+        elif line.startswith("/downloadfile"):
+            # /downloadfile ~N [attachment_index] [save_path]
+            # /downloadfile <message_id> [attachment_index] [save_path]
+            parts = line.split(maxsplit=3)
+            if len(parts) < 2:
+                print("[ERROR] Usage: /downloadfile ~N [attachment_index] [save_path]")
+                print("        /downloadfile <message_id> [attachment_index] [save_path]")
+                print("        Examples:")
+                print("        /downloadfile ~1")
+                print("        /downloadfile ~2 1")
+                print("        /downloadfile ~3 2 downloads")
+                print("        /downloadfile 123456789012345678 1 C:/tmp/file.png")
+                continue
+
+            target = parts[1]
+            attachment_index = 1
+            save_target = None
+
+            if len(parts) >= 3:
+                if parts[2].isdigit():
+                    attachment_index = int(parts[2])
+                    if len(parts) == 4:
+                        save_target = parts[3]
+                else:
+                    save_target = parts[2]
+                    if len(parts) == 4:
+                        print("[ERROR] Invalid arguments. If you provide both attachment_index and save_path, use: /downloadfile <target> <attachment_index> <save_path>")
+                        continue
+
+            if attachment_index < 1:
+                print("[ERROR] attachment_index must be >= 1")
+                continue
+
+            target_message = None
+            if target.startswith("~") and target[1:].isdigit():
+                index = int(target[1:])
+                if index < 1 or index > len(channel_messages):
+                    print(f"[ERROR] Index ~{index} is out of range. You have {len(channel_messages)} message(s) in history.")
+                    continue
+                target_message = channel_messages[-index]
+            elif target.isdigit():
+                try:
+                    target_message = await channel.fetch_message(int(target))
+                except discord.NotFound:
+                    print(f"[ERROR] Message ID {target} was not found in the selected channel.")
+                    continue
+                except Exception as e:
+                    print(f"[ERROR] Failed to fetch message ID {target}: {e}")
+                    continue
+            else:
+                print("[ERROR] Target must be ~N or <message_id>.")
+                continue
+
+            if not target_message.attachments:
+                print("[ERROR] The target message has no attachments.")
+                continue
+
+            if attachment_index > len(target_message.attachments):
+                print(f"[ERROR] attachment_index {attachment_index} is out of range. This message has {len(target_message.attachments)} attachment(s).")
+                continue
+
+            attachment = target_message.attachments[attachment_index - 1]
+            file_name = attachment.filename or f"attachment_{attachment.id}"
+
+            if save_target:
+                if os.path.isdir(save_target) or save_target.endswith(("/", "\\")):
+                    os.makedirs(save_target, exist_ok=True)
+                    save_path = os.path.join(save_target, file_name)
+                else:
+                    parent = os.path.dirname(save_target)
+                    if parent:
+                        os.makedirs(parent, exist_ok=True)
+                    save_path = save_target
+            else:
+                default_dir = "downloads"
+                os.makedirs(default_dir, exist_ok=True)
+                save_path = os.path.join(default_dir, file_name)
+
+            base, ext = os.path.splitext(save_path)
+            final_path = save_path
+            suffix = 1
+            while os.path.exists(final_path):
+                final_path = f"{base}_{suffix}{ext}"
+                suffix += 1
+
+            try:
+                await attachment.save(final_path)
+                print(f"[SYSTEM] Downloaded attachment #{attachment_index} from message {target_message.id} to '{final_path}'.")
+            except Exception as e:
+                print(f"[ERROR] Failed to download attachment: {e}")
+        
         elif line.startswith("/"):
             print(f"[ERROR] Unknown command: {line}")
         else:

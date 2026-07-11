@@ -129,16 +129,35 @@ discord_in_cli/
       │
       ▼ 응, 명령어야
   어떤 명령어?
-  ├─ /select    → 채널 전환
-  ├─ /exit      → 채널 선택 해제
-  ├─ /embed     → 임베드 보기 토글
-  ├─ /img       → 이미지 보기 토글
-  ├─ /status    → 현재 상태 확인
-  ├─ /stop      → 봇 종료
-  ├─ /setrpc    → 봇 활동 변경
-  ├─ /refresh   → 봇 종료
-  └─ 그 외      → "모르는 명령어" 에러
+  ├─ /select       → 채널 전환
+  ├─ /exit         → 채널 선택 해제
+  ├─ /embed        → 임베드 보기 토글
+  ├─ /img          → 이미지 보기 토글
+  ├─ /status       → 현재 상태 확인
+  ├─ /stop         → 봇 종료
+  ├─ /setrpc       → 봇 활동 변경
+  ├─ /refresh      → 최근 메시지 다시 불러오기
+  ├─ /messages     → 최근 메시지 목록 확인
+  ├─ /edit         → 내가 보낸 메시지 수정
+  ├─ /reply        → 특정 메시지에 답글 전송
+  ├─ /uploadfile   → 파일 업로드
+  ├─ /downloadfile → 첨부파일 다운로드
+  └─ 그 외         → "모르는 명령어" 에러
 ```
+
+### 4-2-1. 파일 전송/다운로드 명령 상세
+
+| 명령어 | 형식 | 설명 |
+|--------|------|------|
+| `/uploadfile` | `/uploadfile <file_path>` | 로컬 파일을 현재 채널로 업로드 |
+| `/downloadfile` | `/downloadfile ~N [attachment_index] [save_path]` | 최근 메시지 기준 N번째 메시지 첨부파일 저장 |
+| `/downloadfile` | `/downloadfile <message_id> [attachment_index] [save_path]` | 메시지 ID로 첨부파일 저장 |
+
+`/downloadfile` 동작 포인트:
+
+- `attachment_index` 기본값은 `1` (첫 번째 첨부파일)
+- `save_path`를 생략하면 `downloads/` 폴더를 자동 생성해서 저장
+- 동일 파일명이 이미 있으면 `_1`, `_2`처럼 자동으로 이름을 바꿔 저장
 
 ### 4-3. 메시지 출력 (`print_discord_msg`)
 
