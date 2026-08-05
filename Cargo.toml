@@ -1,0 +1,15 @@
+[package]
+name = "discord_in_cli"
+version = "1.0.0"
+edition = "2021"
+description = "Discord chat in your terminal — rewritten in Rust"
+
+[dependencies]
+serenity = { version = "0.12.5", default-features = false, features = ["builder", "cache", "chrono", "client", "gateway", "http", "model", "rustls_backend", "utils"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "fs"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = "0.4"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
+regex = "1"

@@ -2,6 +2,7 @@
 
 > 터미널(까만 화면)에서 디스코드 채팅을 읽고, 보내는 프로그램이에요!
 > 이 문서는 **처음 해보는 사람도 따라할 수 있게** 아주 쉽게 설명했어요.
+> (이 프로그램은 Rust로 다시 쓰여진 버전이에요 — 사용법은 예전 파이썬 버전과 같아요.)
 
 ---
 
@@ -13,8 +14,8 @@
 이 프로그램이 할 수 있는 일:
 
 - 📨 디스코드 채널에 올라오는 메시지를 터미널에서 실시간으로 보기
-- ✍️ 터미널에서 타자 쳐서 메시지 보내기
-- 🔔 누가 나를 멘션(@나)하면 색깔로 알려주기
+- ✍️ 터미널에서 타자 쳐서 메시지 보내기 (`@닉네임`은 자동으로 진짜 멘션으로 바뀌어요)
+- 🔔 누가 나를 멘션(@나)하면 주황색으로 알려주기
 - 🗑️ 누가 메시지를 **수정**하거나 **삭제**하면 그것도 보여주기
 - 💾 오고 간 메시지를 파일로 저장하기 (기록 남기기)
 - 🖼️ 사진이나 임베드(예쁜 카드 메시지)를 터미널에서 보기
@@ -30,7 +31,7 @@
 
 | 준비물 | 설명 |
 |--------|------|
-| **Python 3.13** | 이 프로그램을 돌리는 언어예요. [python.org](https://www.python.org/)에서 받아요 |
+| **Rust** | 이 프로그램을 돌리는 언어예요. [rustup.rs](https://rustup.rs/)에서 설치해요 |
 | **디스코드 계정** | 당연히 있어야겠죠? |
 | **내 디스코드 서버** | 봇을 초대할 곳. 직접 만들어도 돼요 (무료) |
 
@@ -86,16 +87,12 @@
 # 1. 프로젝트 폴더로 이동
 cd discord_in_cli
 
-# 2. (추천) 가상환경 만들기 - 다른 프로그램과 안 꼬이게 해줘요
-python -m venv .venv
-source .venv/bin/activate     # 윈도우는: .venv\Scripts\activate
+# 2. 컴파일 (처음엔 좀 걸려요 ☕)
+cargo build --release
 
-# 3. 필요한 라이브러리 설치
-pip install -r requirements.txt
+# 3. 실행
+./target/release/discord_in_cli
 ```
-
-> 💡 `requirements.txt` 안에는 `py-cord`(디스코드 연결용), `rich`(예쁜 출력용)가 들어 있어요.
-> 사진 보기 기능을 쓰려면 추가로 설치가 필요해요: `pip install climage pillow`
 
 ---
 
@@ -141,6 +138,7 @@ cp settings.inc.json settings.json
 | `FETCH_HISTORY_LIMIT` | 채널 들어갈 때 지난 메시지 몇 개 불러올지 | `10` |
 | `EMBED_VIEW_default` | 시작할 때 임베드(카드)를 펼쳐서 볼지 | `false` |
 | `IMG_VIEW_default` | 시작할 때 사진을 터미널에 그릴지 | `false` |
+| `MSG_HISTORY_MAX` | `/edit`, `/reply`용 최근 메시지 보관 개수 | `50` |
 | `USERNAME` | 내가 메시지 보낼 때 붙는 이름표 | `"Sparky"` |
 | `WATCH_ID` | 멘션 알림을 받을 사용자 ID 목록 | `[123, 456]` |
 
@@ -153,13 +151,13 @@ cp settings.inc.json settings.json
 설정을 다 했으면 이제 켜봐요!
 
 ```bash
-python app.py
+cargo build --release && ./target/release/discord_in_cli
 ```
 
 성공하면 이런 게 나와요:
 
 ```
-Logged in as: 내터미널봇#1234
+Logged in as: 내터미널봇
 === Server: '내 서버' (ID: ...) ===
 
 📂 일반:
@@ -192,6 +190,7 @@ Use '/select <channel_id>' to select a channel for monitoring and sending messag
 | `/messages all` | 최근 메시지 목록 전체 보기 |
 | `/edit <새 내용>` | 가장 최근 내가 보낸 메시지 수정 |
 | `/edit ~N <새 내용>` | 최근 메시지 기준 N번째 메시지 수정 |
+| `/editmsg <메시지ID> <새 내용>` | 메시지 ID로 수정 |
 | `/reply <내용>` | 가장 최근 메시지에 답글 전송 |
 | `/reply ~N <내용>` | 최근 메시지 기준 N번째 메시지에 답글 전송 |
 | `/uploadfile <파일경로>` | 로컬 파일 업로드 |
@@ -227,7 +226,7 @@ Use '/select <channel_id>' to select a channel for monitoring and sending messag
 ### 사용 예시 흐름 🌟
 
 ```text
-1. python app.py        ← 실행
+1. cargo build --release && ./target/release/discord_in_cli   ← 실행
 2. /select 987654321    ← '잡담' 채널 고르기
 3. (사람들 채팅이 실시간으로 보임)
 4. 안녕 다들 뭐해?       ← 그냥 치면 메시지 전송됨
@@ -255,24 +254,31 @@ Use '/select <channel_id>' to select a channel for monitoring and sending messag
 
 ```
 discord_in_cli/
-├── app.py                  ← 🧠 메인 프로그램 (여기서 다 시작됨)
-├── settings.json           ← ⚙️ 내 설정 (직접 만들어야 함)
-├── settings.inc.json       ← 📋 설정 예시 파일 (복사해서 씀)
-├── requirements.txt        ← 📦 필요한 라이브러리 목록
+├── Cargo.toml            ← 📦 Rust 프로젝트 설정 & 라이브러리 목록
+├── settings.json         ← ⚙️ 내 설정 (직접 만들어야 함)
+├── settings.inc.json     ← 📋 설정 예시 파일 (복사해서 씀)
 └── src/
-    ├── log.py              ← 💾 메시지를 파일로 저장하는 부분
-    ├── alert.py            ← 🔔 멘션 알림(나를 불렀는지) 확인하는 부분
-    ├── embed_render.py     ← 🃏 임베드(카드)를 예쁘게 그리는 부분
-    └── image_render.py     ← 🖼️ 사진을 터미널 그림으로 바꾸는 부분
+    ├── main.rs           ← 🧠 프로그램 시작점 (여기서 다 시작됨)
+    ├── config.rs         ← ⚙️ settings.json 읽기
+    ├── state.rs          ← 🗃️ 공유 상태 (선택 채널, 메시지 버퍼, 보기 토글)
+    ├── handler.rs        ← 📨 디스코드 이벤트 처리 (메시지/수정/삭제)
+    ├── console.rs        ← ⌨️ 터미널 명령어 처리 루프
+    ├── fmt.rs            ← 🎨 색깔 & 멘션 정리 & 메시지 출력
+    ├── embed.rs          ← 🃏 임베드(카드)를 예쁘게 그리는 부분
+    ├── image.rs          ← 🖼️ 사진을 터미널 그림으로 바꾸는 부분
+    └── log.rs            ← 💾 메시지를 파일로 저장하는 부분
 ```
 
 ### 각 파일 한 줄 설명
 
-- **`app.py`**: 디스코드에 로그인하고, 메시지를 받고, 내가 입력한 명령어를 처리하는 중심 역할이에요.
-- **`src/log.py`**: 메시지가 오거나 수정/삭제되면 `messages.log` 파일에 기록해요.
-- **`src/alert.py`**: 메시지에 내 ID(`WATCH_ID`)가 멘션됐는지 검사해서, 맞으면 색칠하라고 알려줘요.
-- **`src/embed_render.py`**: 디스코드의 임베드(제목·설명·버튼이 있는 카드)를 터미널 박스로 그려줘요.
-- **`src/image_render.py`**: 첨부된 사진을 다운받아서 터미널 글자/블록 그림으로 바꿔줘요.
+- **`main.rs`**: 디스코드에 로그인하고, 설정을 읽고, 전체를 시작하는 중심 역할이에요.
+- **`handler.rs`**: 새 메시지·수정·삭제 이벤트를 받아 화면에 출력하고 기록해요.
+- **`console.rs`**: 내가 터미널에 입력한 `/명령어`를 처리하는 무한 루프예요.
+- **`state.rs`**: 선택한 채널, 최근 메시지 버퍼, 임베드/이미지 보기 토글을 관리해요.
+- **`fmt.rs`**: 터미널 색(보라/주황)과 `@멘션`을 예쁘게 다듬고 메시지를 그려요.
+- **`embed.rs`**: 디스코드 임베드(제목·설명·버튼이 있는 카드)를 터미널 박스로 그려줘요.
+- **`image.rs`**: 첨부된 사진을 다운받아서 터미널 글자/블록 그림으로 바꿔줘요.
+- **`log.rs`**: 메시지가 오거나 수정/삭제되면 `messages.log` 파일에 기록해요.
 
 ---
 
@@ -280,12 +286,12 @@ discord_in_cli/
 
 | 증상 | 원인 / 해결 |
 |------|-------------|
-| `FileNotFoundError: settings.json` | `settings.json` 파일을 안 만들었어요. 6번을 다시 보세요. |
+| `Failed to read settings.json` | `settings.json` 파일을 안 만들었어요. 6번을 다시 보세요. |
 | 메시지가 하나도 안 보여요 | 봇 권한(**MESSAGE CONTENT INTENT**)을 안 켰을 거예요. 3-2번 확인! |
 | `SERVER_ID is not set` 오류 | `settings.json`의 `SERVER_ID`가 비었어요. 채워주세요. |
 | 봇 이름은 떴는데 채널 목록이 안 나와요 | 봇을 서버에 초대 안 했거나, 그 채널을 볼 권한이 없어요. |
 | 로그인 실패 / 토큰 오류 | `TOKEN`을 잘못 붙여넣었어요. 3-1에서 다시 복사하세요. |
-| 사진(`/img open`)이 안 돼요 | `pip install climage pillow` 를 안 했을 수 있어요. |
+| 사진(`/img open`)이 안 돼요 | 이미지 형식이 지원되지 않거나 다운로드 실패예요. PNG/JPEG/GIF/WebP를 확인하세요. |
 
 ---
 
