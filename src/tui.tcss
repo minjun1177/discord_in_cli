@@ -1,0 +1,163 @@
+/* ═══════════════════════════════════════════════════════════
+   Discord in CLI — Textual TUI Theme
+   Uses Textual design tokens to support theme switching!
+   ═══════════════════════════════════════════════════════════ */
+
+Screen {
+    background: $surface;
+}
+
+#app-grid {
+    width: 100%;
+    height: 100%;
+}
+
+/* ───── Sidebar ───── */
+
+#sidebar {
+    width: 28;
+    background: $panel;
+}
+
+#sidebar-header {
+    height: 3;
+    width: 100%;
+    background: $panel-darken-1;
+    color: $text;
+    content-align: center middle;
+    text-style: bold;
+    padding-top: 1;
+}
+
+#channel-tree {
+    background: $panel;
+    padding: 1 0 0 1;
+    scrollbar-background: $panel;
+    scrollbar-color: $surface-lighten-1;
+    scrollbar-color-hover: $surface-lighten-2;
+    scrollbar-size-vertical: 1;
+}
+
+Tree > .tree--cursor {
+    background: $primary-background;
+    color: $text;
+}
+
+Tree:focus > .tree--cursor {
+    background: $primary;
+    color: $text;
+}
+
+Tree > .tree--guides {
+    color: $text-disabled;
+}
+
+Tree > .tree--label {
+    color: $text-muted;
+}
+
+Tree > .tree--highlight-line {
+    background: $panel-lighten-1;
+}
+
+/* ───── Main Content ───── */
+
+#main-content {
+    width: 1fr;
+    background: $surface;
+}
+
+#header-bar {
+    height: 3;
+    width: 100%;
+    background: $surface;
+    color: $text;
+    content-align: left middle;
+    padding: 1 2 0 2;
+    text-style: bold;
+    border-bottom: solid $background;
+}
+
+#messages {
+    background: $surface;
+    padding: 1 1;
+    scrollbar-background: $surface;
+    scrollbar-color: $panel;
+    scrollbar-color-hover: $panel-lighten-1;
+    scrollbar-size-vertical: 1;
+    min-width: 40;
+}
+
+/* ───── Input ───── */
+
+#suggestion-box {
+    display: none;
+    height: auto;
+    max-height: 6;
+    background: $panel-darken-1;
+    color: $text;
+    border: round $primary-background;
+    margin: 0 2;
+    margin-bottom: 1;
+}
+
+#input-area {
+    height: 3;
+    margin: 0 2 1 2;
+    background: $boost;
+    border: round $boost;
+    padding: 0 1;
+}
+
+#chat-input {
+    background: $boost;
+    color: $text;
+    border: none;
+    width: 100%;
+}
+
+#chat-input:focus {
+    border: none;
+}
+
+/* ───── Right Sidebar (Members) ───── */
+
+#members-sidebar {
+    width: 28;
+    background: $panel;
+}
+
+#members-header {
+    height: 3;
+    width: 100%;
+    background: $panel-darken-1;
+    color: $text;
+    content-align: center middle;
+    text-style: bold;
+    padding-top: 1;
+}
+
+#members-tree {
+    background: $panel;
+    padding: 1 0 0 1;
+    scrollbar-background: $panel;
+    scrollbar-color: $surface-lighten-1;
+    scrollbar-color-hover: $surface-lighten-2;
+    scrollbar-size-vertical: 1;
+}
+
+/* ───── Footer ───── */
+
+Footer {
+    background: $background;
+    color: $text-muted;
+}
+
+Footer > .footer--key {
+    background: $panel;
+    color: $text;
+}
+
+Footer > .footer--description {
+    color: $text-disabled;
+}

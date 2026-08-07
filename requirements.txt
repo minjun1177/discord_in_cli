@@ -1,5 +1,6 @@
 py-cord>=2.4
 climage
 rich
-climage
 pillow
+pyperclip
+textual>=1.0.0
