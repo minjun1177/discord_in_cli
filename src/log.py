@@ -18,8 +18,12 @@ def resolve_markup(message: discord.Message) -> str:
     # clean_content leaves custom emoji as-is; render them as :name:.
     return CUSTOM_EMOJI_RE.sub(r":\1:", content)
 
+def _channel_name(channel) -> str:
+    # DMChannel has no `.name` attribute; fall back to a friendly label.
+    return getattr(channel, "name", None) or "DM"
+
 def log_message(message: discord.Message, after: discord.Message | None = None, is_edit: bool = False, is_delete: bool = False, is_json: bool = False) -> None:
-    if not SAVE_MESSAGES or not SAVE_MESSAGES:
+    if not SAVE_MESSAGES:
         return
         
     guild_name = message.guild.name if message.guild else "Direct Message"
@@ -37,7 +41,7 @@ def log_message(message: discord.Message, after: discord.Message | None = None, 
                 },
                 "channel": {
                     "id": message.channel.id,
-                    "name": message.channel.name if hasattr(message.channel, 'name') else "DM"
+                    "name": _channel_name(message.channel)
                 },
                 "author": {
                     "id": message.author.id,
@@ -56,7 +60,7 @@ def log_message(message: discord.Message, after: discord.Message | None = None, 
 
             attachment_info = f" (첨부파일: {len(message.attachments)}개)" if message.attachments else ""
 
-            log_line = f"[{time_str}] [{guild_name} / {message.channel.name}] {message.author.name}({message.author.id}) Deleted: {resolve_markup(message)}{attachment_info}\n"
+            log_line = f"[{time_str}] [{guild_name} / {_channel_name(message.channel)}] {message.author.name}({message.author.id}) Deleted: {resolve_markup(message)}{attachment_info}\n"
             
             with open(SAVE_FILENAME, "a", encoding="utf-8") as f:
                 f.write(log_line)
@@ -74,7 +78,7 @@ def log_message(message: discord.Message, after: discord.Message | None = None, 
                 },
                 "channel": {
                     "id": message.channel.id,
-                    "name": message.channel.name if hasattr(message.channel, 'name') else "DM"
+                    "name": _channel_name(message.channel)
                 },
                 "author": {
                     "id": message.author.id,
@@ -96,7 +100,7 @@ def log_message(message: discord.Message, after: discord.Message | None = None, 
             attachment_info_before = f" (첨부파일: {len(message.attachments)}개)" if message.attachments else ""
             attachment_info_after = f" (첨부파일: {len(after.attachments)}개)" if after.attachments else ""
             
-            log_line = f"[{time_str}] [{guild_name} / {message.channel.name}] {message.author.name}({message.author.id}) 수정됨: {resolve_markup(message)}{attachment_info_before} -> {resolve_markup(after)}{attachment_info_after}\n"
+            log_line = f"[{time_str}] [{guild_name} / {_channel_name(message.channel)}] {message.author.name}({message.author.id}) 수정됨: {resolve_markup(message)}{attachment_info_before} -> {resolve_markup(after)}{attachment_info_after}\n"
             
             with open(SAVE_FILENAME, "a", encoding="utf-8") as f:
                 f.write(log_line)
@@ -114,7 +118,7 @@ def log_message(message: discord.Message, after: discord.Message | None = None, 
                 },
                 "channel": {
                     "id": message.channel.id,
-                    "name": message.channel.name if hasattr(message.channel, 'name') else "DM"
+                    "name": _channel_name(message.channel)
                 },
                 "author": {
                     "id": message.author.id,
@@ -134,7 +138,7 @@ def log_message(message: discord.Message, after: discord.Message | None = None, 
             
             attachment_info = f" (첨부파일: {len(message.attachments)}개)" if message.attachments else ""
             
-            log_line = f"[{time_str}] [{guild_name} / {message.channel.name}] {message.author.name}({message.author.id}): {resolve_markup(message)}{attachment_info}\n"
+            log_line = f"[{time_str}] [{guild_name} / {_channel_name(message.channel)}] {message.author.name}({message.author.id}): {resolve_markup(message)}{attachment_info}\n"
             
             with open(SAVE_FILENAME, "a", encoding="utf-8") as f:
                 f.write(log_line)
