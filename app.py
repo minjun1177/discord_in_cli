@@ -6,6 +6,7 @@ import json
 import asyncio
 import sys
 import re
+from rich.markup import escape as rich_escape
 from src.tui import start_tui, get_app
 from src.tui import tui_print as print
 import pyperclip
@@ -33,7 +34,11 @@ SAVE_AS_JSON = settings.get("SAVE_AS_JSON", False)
 SERVER_ID = int(settings.get("SERVER_ID", None)) if settings.get("SERVER_ID") else None
 FETCH_HISTORY_LIMIT = int(settings.get("FETCH_HISTORY_LIMIT", 10))
 EMBED_VIEW_DEF = settings.get("EMBED_VIEW_default", False)
-MSG_HISTORY_MAX = settings.get("MSG_HISTORY_MAX", 50)
+MSG_HISTORY_MAX = int(settings.get("MSG_HISTORY_MAX", 50))
+
+def _esc(text) -> str:
+    """Escape user-controlled text so Discord content is never parsed as Rich markup."""
+    return rich_escape(str(text))
 
 global SELECT_CHANNEL_ID
 SELECT_CHANNEL_ID = None
@@ -72,15 +77,16 @@ async def print_discord_msg(msg, is_edit=False, before=None) -> None:
         
     hide_main_text = not has_content and len(hidden_texts) > 0
     
-    author_name_colored = f"[#B4009E]{msg.author.name}[/]" if msg.author.bot else msg.author.name
+    author_name = _esc(msg.author.name)
+    author_name_colored = f"[#B4009E]{author_name}[/]" if msg.author.bot else author_name
     bot_suffix = "(bot)" if msg.author.bot else ""
     time_str = msg.created_at.strftime('%Y-%m-%d %H:%M:%S')
     
     ch_target = before.channel if is_edit and before else msg.channel
-    ch_name = getattr(ch_target, 'name', 'DM')
+    ch_name = _esc(getattr(ch_target, 'name', 'DM'))
     
     if alert.check(msg):
-        prefix = f"[#EA9800 on #2B251C]{msg.author.name}{bot_suffix}"
+        prefix = f"[#EA9800 on #2B251C]{author_name}{bot_suffix}"
         suffix = "[/]"
     else:
         prefix = f"{author_name_colored}{bot_suffix}"
@@ -91,13 +97,13 @@ async def print_discord_msg(msg, is_edit=False, before=None) -> None:
         if hide_main_text:
             text = f"\\[{', '.join(hidden_texts)}]"
         else:
-            text = f"{before.content} -> {msg.content}"
+            text = _esc(f"{before.content} -> {msg.content}")
     else:
         action = ""
         if hide_main_text:
             text = f"\\[{', '.join(hidden_texts)}]"
         else:
-            text = resolve_markup(msg)
+            text = _esc(resolve_markup(msg))
             
     highlights = settings.get("HIGHLIGHTS", [])
     if highlights and has_content:
@@ -212,7 +218,7 @@ async def process_command(line: str) -> None:
                 if selected_channel is None:
                     try:
                         selected_channel = await bot.fetch_channel(temp_id)
-                    except:
+                    except Exception:
                         pass
                         
                 if selected_channel:
@@ -517,10 +523,11 @@ async def process_command(line: str) -> None:
             else:
                 print(f"[SYSTEM] Your sent messages (newest first):")
                 for i, msg in reversed(my_messages):
-                    author_name = f"[#B4009E]{msg.author.name}[/]" if msg.author.bot else msg.author.name
+                    author_name = _esc(msg.author.name)
+                    author_name = f"[#B4009E]{author_name}[/]" if msg.author.bot else author_name
                     resolved = resolve_markup(msg)
                     resolved = convert_names_to_mentions(resolved, channel)
-                    preview = resolved[:50] + ("..." if len(resolved) > 50 else "")
+                    preview = _esc(resolved[:50] + ("..." if len(resolved) > 50 else ""))
                     time_str = msg.created_at.strftime('%H:%M:%S')
                     print(f"  ~{i}  {author_name} ({time_str}) {preview}")
                 print(f"[SYSTEM] Use '/edit <new text>' or '/edit ~N <new text>' to edit.")
@@ -636,8 +643,8 @@ async def process_command(line: str) -> None:
                 )
                 _add_to_channel_messages(sent_msg)
                 resolved_target = resolve_markup(target_message)
-                target_preview = resolved_target[:30] + ("..." if len(resolved_target) > 30 else "")
-                print(f"[SYSTEM] Replied to ~{index} ({target_message.author.name}: {target_preview})")
+                target_preview = _esc(resolved_target[:30] + ("..." if len(resolved_target) > 30 else ""))
+                print(f"[SYSTEM] Replied to ~{index} ({_esc(target_message.author.name)}: {target_preview})")
             except discord.NotFound:
                 print(f"[ERROR] Message ~{index} was deleted and can no longer be replied to.")
                 channel_messages.remove(target_message)
@@ -723,7 +730,9 @@ async def process_command(line: str) -> None:
                 return
 
             attachment = target_message.attachments[attachment_index - 1]
-            file_name = attachment.filename or f"attachment_{attachment.id}"
+            # Sanitize the server-controlled filename to prevent path traversal when
+            # joining it into a save directory (e.g. a filename like "../../evil").
+            file_name = os.path.basename(attachment.filename or f"attachment_{attachment.id}")
 
             if save_target:
                 if os.path.isdir(save_target) or save_target.endswith(("/", "\\")):
@@ -846,14 +855,13 @@ async def on_presence_update(before, after):
 @bot.event
 async def on_ready() -> None:
     print(f"Logged in as: {bot.user}")
-    
+
     target_guild = None
     if SERVER_ID:
         target_guild = bot.get_guild(SERVER_ID)
-        game = discord.Game(f"Watching {target_guild.name} | Logined as {USERNAME}")
-        await bot.change_presence(status=discord.Status.online, activity=game)
-
         if target_guild:
+            game = discord.Game(f"Watching {target_guild.name} | Logined as {USERNAME}")
+            await bot.change_presence(status=discord.Status.online, activity=game)
             await get_all_channels(target_guild)
         else:
             print(f"Error: Server with ID {SERVER_ID} not found. Please ensure the bot is invited to the server.")
@@ -881,34 +889,31 @@ def resolve_markup(message: discord.Message) -> str:
 
 def convert_names_to_mentions(text: str, channel: discord.abc.Messageable) -> str:
     mention_pattern = re.compile(r"@([^\s]+)")
-    matches = mention_pattern.findall(text)
-    
-    if isinstance(channel, discord.TextChannel):
-        guild = channel.guild
-        
-        for name in matches:
-            name_lower = name.lower()
-            target_member = None
-            
-            for member in guild.members:
-                if member.display_name.lower() == name_lower:
-                    target_member = member
-                    break
-                elif member.name.lower() == name_lower:
-                    target_member = member
-                    break
-                elif getattr(member, 'global_name', None) and member.global_name.lower() == name_lower:
-                    target_member = member
-                    break
-            
-            if target_member:
-                text = text.replace(f"@{name}", f"<@{target_member.id}>")
-                
-    return text
+
+    if not isinstance(channel, discord.TextChannel):
+        return text
+
+    guild = channel.guild
+
+    def _resolve(match: re.Match) -> str:
+        name = match.group(1)
+        name_lower = name.lower()
+        for member in guild.members:
+            if (member.display_name.lower() == name_lower
+                    or member.name.lower() == name_lower
+                    or (getattr(member, 'global_name', None) and member.global_name.lower() == name_lower)):
+                return f"<@{member.id}>"
+        return match.group(0)
+
+    # Replace each matched mention independently. The previous str.replace("@name", ...)
+    # corrupted longer tokens (e.g. "@john" inside "@johnny" -> "<@111>ny").
+    return mention_pattern.sub(_resolve, text)
 
 @bot.event
 async def on_message(message: discord.Message) -> None:
-    if SELECT_CHANNEL_ID is not None and message.channel.id != SELECT_CHANNEL_ID:
+    # Only filter out *guild* messages from other channels. DMs (message.guild is None)
+    # must still be handled below even when a channel is selected.
+    if message.guild is not None and SELECT_CHANNEL_ID is not None and message.channel.id != SELECT_CHANNEL_ID:
         return
 
     if message.channel.id == SELECT_CHANNEL_ID or message.channel.id == MONITOR_CHANNEL_ID:
@@ -945,12 +950,14 @@ async def on_message_delete(message: discord.Message) -> None:
         return
     # Remove from channel_messages buffer
     if message.channel.id == SELECT_CHANNEL_ID or message.channel.id == MONITOR_CHANNEL_ID:
-        ch_name = getattr(message.channel, 'name', 'DM')
+        ch_name = _esc(getattr(message.channel, 'name', 'DM'))
+        author_name = _esc(message.author.name)
+        deleted_at = message.created_at.strftime('%Y-%m-%d %H:%M:%S')
         if alert.check(message):
-            print(f"[#EA9800 on #2B251C]\\[{ch_name}] {message.author.name}{'(bot)' if message.author.bot else ''} Deleted ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}[/]")
+            print(f"[#EA9800 on #2B251C]\\[{ch_name}] {author_name}{'(bot)' if message.author.bot else ''} Deleted ({deleted_at}): {_esc(resolve_markup(message))}[/]")
         else:
-            author_name = f"[#B4009E]{message.author.name}[/]" if message.author.bot else message.author.name
-            print(f"\\[{ch_name}] {author_name}{'(bot)' if message.author.bot else ''} Deleted ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')}): {resolve_markup(message)}")
+            author_name_colored = f"[#B4009E]{author_name}[/]" if message.author.bot else author_name
+            print(f"\\[{ch_name}] {author_name_colored}{'(bot)' if message.author.bot else ''} Deleted ({deleted_at}): {_esc(resolve_markup(message))}")
     log.log_message(message, is_delete=True, is_json=SAVE_AS_JSON)
 
 async def main():
